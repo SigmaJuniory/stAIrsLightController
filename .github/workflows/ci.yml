@@ -7,7 +7,37 @@ on:
     branches: [main]
 
 jobs:
-  # Job 1: Static Code Analysis (zamiast clang-format)
+  # Job 1: Sprawdzenie formatowania kodu
+  check-formatting:
+    name: Check Code Formatting
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Install clang-format
+        run: sudo apt-get update && sudo apt-get install -y clang-format-15
+      
+      - name: Check formatting
+        run: |
+          find src include lib test -name '*.cpp' -o -name '*.h' -o -name '*.hpp' 2>/dev/null | \
+          xargs clang-format-15 --dry-run --Werror
+      
+      # Jeśli chcesz zobaczyć różnice gdy formatowanie jest złe:
+      - name: Show formatting differences
+        if: failure()
+        run: |
+          echo "Formatting errors found! Run locally:"
+          echo "  clang-format -i <file>"
+          echo ""
+          echo "Differences:"
+          find src include lib test -name '*.cpp' -o -name '*.h' -o -name '*.hpp' 2>/dev/null | \
+          while read file; do
+            diff -u "$file" <(clang-format-15 "$file") 2>/dev/null && echo "---"
+          done
+
+  # Job 2: Static Code Analysis (zamiast clang-format)
   static-analysis:
     name: Static Code Analysis
     runs-on: ubuntu-latest
@@ -31,7 +61,7 @@ jobs:
         env:
           PLATFORMIO_FORCE_COLOR: true
 
-  # Job 2: Testy native
+  # Job 3: Testy native
   native-tests:
     name: Native Tests
     runs-on: ubuntu-latest
