@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <Arduino.h>
 // uncomment line below if you plan to use GMock
 // #include <gmock/gmock.h>
 
@@ -15,9 +16,8 @@ TEST(Sanity, IsItFalse)
     EXPECT_FALSE(false);
 }
 
-#if defined(ARDUINO)
-#include <Arduino.h>
 
+// Mandatory Setup % Loop for testing on MCU
 void setup()
 {
     // should be the same value as for the `test_speed` option in "platformio.ini"
@@ -39,17 +39,3 @@ void loop()
   delay(1000);
 }
 
-#else
-int main(int argc, char **argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    // if you plan to use GMock, replace the line above with
-    // ::testing::InitGoogleMock(&argc, argv);
-
-    if (RUN_ALL_TESTS())
-    ;
-
-    // Always return zero-code and allow PlatformIO to parse results
-    return 0;
-}
-#endif
