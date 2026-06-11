@@ -1,0 +1,23 @@
+# .clang-format
+# Based on LLVM style with key changes for your coding style
+
+BasedOnStyle: LLVM
+
+# --- Braces (Your key change) ---
+# Attach style: Opening brace is on the same line for functions, classes, if, for, etc.
+BreakBeforeBraces: Attach
+
+# Short functions always use multiple lines, never single line
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+
+# --- Indentation and spacing (Matching your code) ---
+# Indentation: 2 spaces
+IndentWidth: 2
+
+# --- Other useful settings ---
+# Maximum line length
+ColumnLimit: 100
+# Sort #include directives (good practice)
+SortIncludes: true
