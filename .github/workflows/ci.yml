@@ -27,14 +27,16 @@ jobs:
           pip install platformio
       
       - name: Run static analysis
-        run: pio check -e native --fail-on-defect=medium --json-output
+        run: |
+          mkdir static_analysis_logs
+          pio check -e native --fail-on-defect=medium &> static_analysis_logs/results.txt
       
       - name: Upload analysis results
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: pio-check-results
-          path: .pio/check/  # PlatformIO zapisuje tu wyniki
+          path: static_analysis_logs/ 
 
   # Job 2: Testy native
   native-tests:
@@ -54,4 +56,13 @@ jobs:
         run: pip install platformio
       
       - name: Run native tests
-        run: pio test -e native
+        run: |
+          mkdir -p unit_tests_logs
+          pio test -e native &> unit_tests_logs/results.txt
+
+      - name: Upload tests results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pio-tests-results
+          path: unit_tests_logs/ 
