@@ -5,55 +5,49 @@
 // TEST(...)
 // TEST_F(...)
 
-TEST(Sanity, TrueIsTrue)
-{
-    EXPECT_TRUE(true);
+TEST(Sanity, TrueIsTrue) {
+  EXPECT_TRUE(true);
 }
 
-TEST(Sanity, IsItFalse)
-{
-    EXPECT_FALSE(false);
+TEST(Sanity, IsItFalse) {
+  EXPECT_FALSE(false);
 }
 
 #if defined(ARDUINO)
 #include <Arduino.h>
 
-
 // Mandatory setup:
 //  1. Setup & Loop while testing on MCU
 //  2. main in case of testing on computer
-void setup()
-{
-    // should be the same value as for the `test_speed` option in "platformio.ini"
-    // default value is test_speed=115200
-    Serial.begin(115200);
+void setup() {
+  // should be the same value as for the `test_speed` option in "platformio.ini"
+  // default value is test_speed=115200
+  Serial.begin(115200);
 
-    ::testing::InitGoogleTest();
-    // if you plan to use GMock, replace the line above with
-    // ::testing::InitGoogleMock();
+  ::testing::InitGoogleTest();
+  // if you plan to use GMock, replace the line above with
+  // ::testing::InitGoogleMock();
 }
 
-void loop()
-{
+void loop() {
   // Run tests
   if (RUN_ALL_TESTS())
-  ;
+    ;
 
   // sleep for 1 sec
   delay(1000);
 }
 
 #else
-int main(int argc, char **argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    // if you plan to use GMock, replace the line above with
-    // ::testing::InitGoogleMock(&argc, argv);
+int main(int argc, char **argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  // if you plan to use GMock, replace the line above with
+  // ::testing::InitGoogleMock(&argc, argv);
 
-    if (RUN_ALL_TESTS())
+  if (RUN_ALL_TESTS())
     ;
 
-    // Always return zero-code and allow PlatformIO to parse results
-    return 0;
+  // Always return zero-code and allow PlatformIO to parse results
+  return 0;
 }
 #endif
