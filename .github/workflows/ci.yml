@@ -1,8 +1,6 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
 
@@ -82,3 +80,5 @@ jobs:
         run: pio test -e native
         env:
           PLATFORMIO_FORCE_COLOR: true
+
+  
