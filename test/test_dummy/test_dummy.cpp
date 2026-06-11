@@ -10,6 +10,10 @@ TEST(Sanity, TrueIsTrue)
     EXPECT_TRUE(true);
 }
 
+TEST(Sanity, IsItFalse)
+{
+    EXPECT_FALSE(false);
+}
 
 #if defined(ARDUINO)
 #include <Arduino.h>
