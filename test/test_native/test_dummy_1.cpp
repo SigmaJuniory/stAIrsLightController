@@ -1,3 +1,4 @@
+#include "fakes/FakePWMDevice.h"
 #include <gtest/gtest.h>
 // uncomment line below if you plan to use GMock
 // #include <gmock/gmock.h>
@@ -11,6 +12,12 @@ TEST(Sanity, TrueIsTrue) {
 
 TEST(Sanity, IsItFalse) {
   EXPECT_FALSE(false);
+}
+
+TEST(Sanity, UseFakePWMDevice) {
+  FakePWMDevice fake_pwm;
+  fake_pwm.begin();
+  fake_pwm.setPWM(0, 1024);
 }
 
 #if defined(ARDUINO)
