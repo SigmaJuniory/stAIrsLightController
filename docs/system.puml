@@ -1,0 +1,152 @@
+@startuml
+skinparam Style strictuml
+
+' Styl monochromatyczny - czarny i biały
+skinparam BackgroundColor #FFFFFF
+skinparam DefaultFontColor #000000
+skinparam DefaultBorderColor #000000
+
+skinparam ClassBackgroundColor #FFFFFF
+skinparam ClassBorderColor #000000
+skinparam ClassHeaderBackgroundColor #FFFFFF
+skinparam ClassHeaderFontColor #000000
+skinparam ClassAttributeFontColor #000000
+
+skinparam NoteBackgroundColor #FFFFFF
+skinparam NoteBorderColor #000000
+skinparam ArrowColor #000000
+
+title Diagram Klas - System Sterowania Schodami LED (Wersja Zaawansowana)
+
+class MainProgram {
+    + void setup()
+    + void loop()
+}
+
+class YAMLConfigParser {
+    + Config loadYaml(String filePath)
+    + bool parse(String yamlContent)
+}
+
+class Config {
+    + uint16_t fadeSpeed
+    + uint8_t maxBrightness
+    + uint32_t holdTimeMs
+    + uint32_t colorHex
+    + List<StepMapping> stepMappings
+    + List<uint8_t> sensorPins
+    + loadFromNVS() : bool
+    + saveToNVS() : bool
+}
+
+struct StepMapping {
+    + uint8_t stepId
+    + uint8_t expanderI2CAddress
+    + uint8_t channelWarm
+    + uint8_t channelCold
+}
+
+struct ChannelConfig {
+    + uint8_t pcaChannelWarm
+    + uint8_t pcaChannelCold
+}
+
+class StaircaseBuilder {
+    + StaircaseController buildController(Config& cfg, List<IPWMDevice*>& outExpanders)
+    + List<MotionSensor> buildSensors(Config& cfg, InputEventHandler* handler)
+}
+
+interface InputEventHandler {
+    + void onMotionDetected(bool directionUp)
+}
+
+class MotionSensor {
+    - uint8_t pin
+    - bool lastState
+    - bool directionUp
+    - InputEventHandler* eventHandler
+    + MotionSensor(uint8_t gpioPin, bool dirUp, InputEventHandler* handler)
+    + update() : void
+}
+
+class StaircaseController {
+    - List<StairStep> steps
+    - List<IPWMDevice*>& expanders
+    - uint8_t animationState
+    - uint32_t stateTimer
+    + StaircaseController(List<IPWMDevice*>& expanderList)
+    + init(List<StairStep>& configuredSteps)
+    + update(uint32_t currentMillis, Config& config)
+    + triggerAnimation(bool directionUp)
+    - applyHardwareUpdate()
+}
+
+class StairStep {
+    - uint8_t id
+    - IPWMDevice* targetExpander
+    - ChannelConfig channels
+    - uint16_t currentBrightness
+    - uint16_t targetBrightness
+    + StairStep(uint8_t id, IPWMDevice* expander, ChannelConfig chConfig)
+    + updateFade(uint16_t speed) : bool
+    + setTarget(uint16_t brightness)
+    + getCurrent() : uint16_t
+}
+
+interface IPWMDevice {
+    + {abstract} bool begin()
+    + {abstract} void setPWM(uint8_t channel, uint16_t value)
+    + {abstract} void setAllPWM(uint16_t value)
+}
+
+class PCA9685Driver {
+    - uint8_t i2cAddress
+    - bool isInitialized
+    + PCA9685Driver(uint8_t address)
+    + bool begin() override
+    + void setPWM(uint8_t channel, uint16_t value) override
+    + void setAllPWM(uint16_t value) override
+}
+
+package "External Library" {
+    class PCA9685_Driver_Lib {
+        + void writeRegister()
+        + void setPWMFreq()
+    }
+}
+
+enum LightMode {
+    MODE_ON
+    MODE_FADE
+    MODE_WAVE_IN
+    MODE_WAVE_OUT
+}
+
+' Relacje i asocjacje
+MainProgram ..> YAMLConfigParser : "1. Parsuje plik"
+MainProgram ..> StaircaseBuilder : "2. Tworzy obiekty"
+MainProgram --> Config : "Przechowuje"
+MainProgram --> StaircaseController : "Aktualizuje w loop"
+MainProgram "1" --> "many" MotionSensor : "Aktualizuje w loop"
+
+YAMLConfigParser .down.> Config : "Wypełnia strukturę"
+Config "1" *-- "many" StepMapping : "Zawiera definicje portów"
+
+StaircaseBuilder ..> StaircaseController : "Buduje i konfiguruje"
+StaircaseBuilder ..> MotionSensor : "Inicjalizuje listę"
+
+MotionSensor --> InputEventHandler : "Powiadamia o ruchu"
+StaircaseController .up.|> InputEventHandler : "Implementuje reakcję"
+
+StaircaseController "1" *-- "many" StairStep : "Zarządza i animuje"
+StaircaseController "1" --> "many" IPWMDevice : "Wysyła stany przez interfejs"
+StaircaseController ..> LightMode : "Używa stanów"
+
+StairStep "1" *-- "1" ChannelConfig : "Używa"
+StairStep "1" --> "1" IPWMDevice : "Wie gdzie wysłać swój stan"
+
+PCA9685Driver .up.|> IPWMDevice : "Implementuje interfejs"
+PCA9685Driver -right-> PCA9685_Driver_Lib : "Opakowuje bibliotekę"
+
+@endum
+@enduml
