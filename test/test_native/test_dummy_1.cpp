@@ -15,7 +15,7 @@ TEST(Sanity, IsItFalse) {
 }
 
 TEST(Sanity, UseFakePWMDevice) {
-  FakePWMDevice fake_pwm;
+  FakePWMDevice fake_pwm(4);
   fake_pwm.begin();
   fake_pwm.setPWM(0, 1024);
 }

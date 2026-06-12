@@ -1,18 +1,14 @@
 #pragma once
 #include "interfaces/IPWMDevice.h"
-#include <array>
+#include <vector>
 
 class FakePWMDevice : public IPWMDevice {
 public:
-  bool begin() override {
-    return true; // Simulate successful initialization
-  }
+  explicit FakePWMDevice(size_t channelsCount);
 
-  void setPWM(uint8_t channel, uint16_t value) override {
-    // Simulate setting PWM value (no actual hardware interaction)
-    channels[channel] = value;
-  }
+  bool begin() override;
+  void setPWM(uint8_t channel, uint16_t value) override;
 
 private:
-  std::array<uint16_t, 8> channels;
+  std::vector<uint16_t> channels;
 };
