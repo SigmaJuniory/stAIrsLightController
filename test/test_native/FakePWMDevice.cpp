@@ -12,3 +12,10 @@ void FakePWMDevice::setPWM(uint8_t channel, uint16_t value) {
     channels[channel] = value;
   }
 }
+
+uint16_t FakePWMDevice::getPWM(uint8_t channel) const {
+  if (channel < channels.size()) {
+    return channels[channel];
+  }
+  return 0;
+}
