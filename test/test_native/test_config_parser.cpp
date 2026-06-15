@@ -1,4 +1,5 @@
 #include <ArduinoJson.h>
+#include <fstream>
 #include <gtest/gtest.h>
 
 namespace {
@@ -8,55 +9,124 @@ constexpr auto jsonInput = R"({
     })";
 
 constexpr auto jsonConfig = R"({
-        "stepMappings": [
-            {
-                "stepId": 1,
-                "expanderI2CAddress": 64,
-                "channelWarm": 5,
-                "channelCold": 6
-            },
-            {
-                "stepId": 2,
-                "expanderI2CAddress": 64,
-                "channelWarm": 7,
-                "channelCold": 8
+    "globalSettings": {
+        "lightMode": {
+            "day": {             
+                "YellowLightBrightness": 80, "WhiteLightBrightness": 60 },
+            "night": { 
+                "YellowLightBrightness": 100, "WhiteLightBrightness": 100 }
+        }
+    },
+    "stairs": [
+        {
+            "stepsCount": 5
+        },
+        {
+            "stepsCount": 18,
+            "lightMode": {
+                "day": { "YellowLightBrightness": 50, "WhiteLightBrightness": 40 },
+                "night": { "YellowLightBrightness": 100, "WhiteLightBrightness": 100 }
             }
-        ]
-    })";
+        }
+    ]
+})";
+
 } // namespace
 
-struct StepMapping {
-  uint8_t stepId;
-  uint8_t expanderI2CAddress;
-  uint8_t channelWarm;
-  uint8_t channelCold;
+struct LightLevel {
+  uint8_t yellowLightBrightness{};
+  uint8_t whiteLightBrightness{};
+};
+
+struct LightMode {
+  LightLevel day;
+  LightLevel night;
+};
+
+struct GlobalSettings {
+  LightMode lightMode;
+};
+
+struct StairConfig {
+  int stepsCount{};
+  bool hasLightMode{};
+  LightMode lightMode;
 };
 
 struct Config {
-  std::vector<StepMapping> stepMappings{};
+  GlobalSettings globalSettings;
+  std::vector<StairConfig> stairs{};
 };
 
 class ConfigParser {
 public:
+  static Config parseConfigFromFile(const std::string &filePath) {
+    std::ifstream file(filePath);
+
+    if (!file.is_open()) {
+      throw std::runtime_error("Cannot open file: " + filePath);
+    }
+
+    std::string jsonString((std::istreambuf_iterator<char>(file)),
+                           std::istreambuf_iterator<char>());
+    file.close();
+
+    return parseConfigFromJson(jsonString);
+  }
+
   static Config parseConfigFromJson(const std::string_view json) {
     JsonDocument doc;
-    DeserializationError error = deserializeJson(doc, json);
+    const auto error = deserializeJson(doc, json);
 
     if (error) {
       throw std::runtime_error(error.c_str());
     }
+    Config config;
 
-    std::vector<StepMapping> stepMappings;
-    for (const auto &stepMappingJson : doc["stepMappings"].as<JsonArray>()) {
+    parseGlobalSettings(doc["globalSettings"], config);
 
-      stepMappings.push_back(
-          StepMapping{.stepId = stepMappingJson["stepId"],
-                      .expanderI2CAddress = stepMappingJson["expanderI2CAddress"],
-                      .channelWarm = stepMappingJson["channelWarm"],
-                      .channelCold = stepMappingJson["channelCold"]});
+    for (const auto &stair : doc["stairs"].as<JsonArray>()) {
+      StairConfig stairConfig;
+
+      parseStairConfig(stair, stairConfig);
+
+      config.stairs.push_back(stairConfig);
     }
 
-    return Config{.stepMappings = std::move(stepMappings)};
+    return config;
+  }
+
+private:
+  static void parseStairConfig(const JsonObject &stairJson, StairConfig &stairConfig) {
+    stairConfig.stepsCount = stairJson["stepsCount"];
+    if (auto lightMode = stairJson["lightMode"]; !lightMode.isNull()) {
+      stairConfig.hasLightMode = true;
+
+      stairConfig.lightMode.day.yellowLightBrightness = lightMode["day"]["YellowLightBrightness"];
+
+      stairConfig.lightMode.day.whiteLightBrightness = lightMode["day"]["WhiteLightBrightness"];
+
+      stairConfig.lightMode.night.yellowLightBrightness =
+          lightMode["night"]["YellowLightBrightness"];
+
+      stairConfig.lightMode.night.whiteLightBrightness = lightMode["night"]["WhiteLightBrightness"];
+    }
+  }
+
+  static void parseGlobalSettings(const JsonObject &globalSettingsJson, Config &config) {
+    auto lightMode = globalSettingsJson["lightMode"];
+
+    config.globalSettings.lightMode.day.yellowLightBrightness =
+        lightMode["day"]["YellowLightBrightness"];
+
+    config.globalSettings.lightMode.day.whiteLightBrightness =
+        lightMode["day"]["WhiteLightBrightness"];
+
+    config.globalSettings.lightMode.night.yellowLightBrightness =
+        lightMode["night"]["YellowLightBrightness"];
+
+    config.globalSettings.lightMode.night.whiteLightBrightness =
+        lightMode["night"]["WhiteLightBrightness"];
   }
 };
 
@@ -76,14 +146,20 @@ class ConfigParserTest : public ::testing::Test {};
 TEST_F(ConfigParserTest, ParsesStaircaseConfig) {
   Config config = ConfigParser::parseConfigFromJson(jsonConfig);
 
-  ASSERT_EQ(config.stepMappings.size(), 2);
-  EXPECT_EQ(config.stepMappings[0].stepId, 1);
-  EXPECT_EQ(config.stepMappings[0].expanderI2CAddress, 64);
-  EXPECT_EQ(config.stepMappings[0].channelWarm, 5);
-  EXPECT_EQ(config.stepMappings[0].channelCold, 6);
+  ASSERT_EQ(config.globalSettings.lightMode.day.yellowLightBrightness, 80);
+  ASSERT_EQ(config.globalSettings.lightMode.day.whiteLightBrightness, 60);
+  ASSERT_EQ(config.globalSettings.lightMode.night.yellowLightBrightness, 100);
+  ASSERT_EQ(config.globalSettings.lightMode.night.whiteLightBrightness, 100);
 
-  EXPECT_EQ(config.stepMappings[1].stepId, 2);
-  EXPECT_EQ(config.stepMappings[1].expanderI2CAddress, 64);
-  EXPECT_EQ(config.stepMappings[1].channelWarm, 7);
-  EXPECT_EQ(config.stepMappings[1].channelCold, 8);
+  ASSERT_EQ(config.stairs.size(), 2);
+
+  ASSERT_EQ(config.stairs[0].stepsCount, 5);
+  ASSERT_FALSE(config.stairs[0].hasLightMode);
+
+  ASSERT_EQ(config.stairs[1].stepsCount, 18);
+  ASSERT_TRUE(config.stairs[1].hasLightMode);
+  ASSERT_EQ(config.stairs[1].lightMode.day.yellowLightBrightness, 50);
+  ASSERT_EQ(config.stairs[1].lightMode.day.whiteLightBrightness, 40);
+  ASSERT_EQ(config.stairs[1].lightMode.night.yellowLightBrightness, 100);
+  ASSERT_EQ(config.stairs[1].lightMode.night.whiteLightBrightness, 100);
 }

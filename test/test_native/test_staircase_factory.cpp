@@ -19,7 +19,7 @@ struct Config {
 class StairStep {
 public:
   explicit StairStep(const StepMapping &stepMapping, IPWMDevice *pwmDevice)
-      : stepMapping(stepMapping), pwmDevice(pwmDevice){};
+      : stepMapping(stepMapping), pwmDevice(pwmDevice) {};
 
   void setWarm(uint16_t value) {
     pwmDevice->setPWM(stepMapping.channelWarm, value);
@@ -36,6 +36,8 @@ public:
   createStaircaseFromConfig(const Config &config, std::map<uint8_t, IPWMDevice *> &pwmDevices) {
     std::vector<std::unique_ptr<StairStep>> staircases;
 
+    // TODO: chagne it to automaticly craete step mapping with modulo
+    std::vector<StepMapping> stepMappings = config.stepMappings;
     for (const auto &stepMapping : config.stepMappings) {
       auto deviceIt = pwmDevices.find(stepMapping.expanderI2CAddress);
       if (deviceIt != pwmDevices.end()) {
