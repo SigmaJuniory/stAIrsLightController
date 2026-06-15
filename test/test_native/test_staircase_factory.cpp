@@ -19,7 +19,7 @@ struct Config {
 class StairStep {
 public:
   explicit StairStep(const StepMapping &stepMapping, IPWMDevice *pwmDevice)
-      : stepMapping(stepMapping), pwmDevice(pwmDevice){};
+      : stepMapping(stepMapping), pwmDevice(pwmDevice) {};
 
   void setWarm(uint16_t value) {
     pwmDevice->setPWM(stepMapping.channelWarm, value);
