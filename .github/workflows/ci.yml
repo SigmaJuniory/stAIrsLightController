@@ -22,22 +22,9 @@ jobs:
       
       - name: Check formatting
         run: |
-          find src include lib test -name '*.cpp' -o -name '*.h' -o -name '*.hpp' 2>/dev/null | \
-          xargs clang-format-15 --dry-run --Werror
-      
-      # Jeśli chcesz zobaczyć różnice gdy formatowanie jest złe:
-      - name: Show formatting differences
-        if: failure()
-        run: |
-          echo "Formatting errors found! Run locally:"
-          echo "  clang-format -i <file>"
-          echo ""
-          echo "Differences:"
-          find src include lib test -name '*.cpp' -o -name '*.h' -o -name '*.hpp' 2>/dev/null | \
-          while read file; do
-            diff -u "$file" <(clang-format-15 "$file") 2>/dev/null && echo "---"
-          done
-
+          chmod +x scripts/check-formatter.sh
+          ./scripts/check-formatter.sh
+          
   # Job 2: Static Code Analysis (zamiast clang-format)
   static-analysis:
     name: Static Code Analysis
