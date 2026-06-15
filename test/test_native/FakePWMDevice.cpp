@@ -1,8 +1,7 @@
 #include "fakes/FakePWMDevice.h"
 #include <algorithm>
 
-FakePWMDevice::FakePWMDevice(size_t channelsCount) : channels(channelsCount, 0) {
-}
+FakePWMDevice::FakePWMDevice(size_t channelsCount) : channels(channelsCount, 0) {}
 
 bool FakePWMDevice::begin() {
   return true;

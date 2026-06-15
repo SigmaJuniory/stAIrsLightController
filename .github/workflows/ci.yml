@@ -17,14 +17,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      - name: Install clang-format
-        run: sudo apt-get update && sudo apt-get install -y clang-format-15
-      
-      - name: Check formatting
+      - name: Setup LLVM 22
         run: |
-          chmod +x scripts/check-formatter.sh
-          ./scripts/check-formatter.sh
-          
+          sudo apt-get update
+          sudo apt-get install -y wget gnupg
+
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 22
+
+      - name: Install clang-format
+        run: sudo apt-get install -y clang-format-22
+
+      - name: Run formatter check
+        run: ./scripts/check-formatter.sh
+      
+      - name: Show clang-format diff (debug)
+        if: failure()
+        run: |
+          echo "DIFF FROM clang-format:"
+          find src include lib test -name '*.cpp' -o -name '*.h' -o -name '*.hpp' | \
+          while read file; do
+            echo "----- $file -----"
+            clang-format "$file" | diff -u "$file" - || true
+          done
+
   # Job 2: Static Code Analysis (zamiast clang-format)
   static-analysis:
     name: Static Code Analysis
