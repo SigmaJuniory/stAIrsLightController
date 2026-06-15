@@ -17,25 +17,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      - name: Install clang-format
-        run: sudo apt-get update && sudo apt-get install -y clang-format-15
-      
-      - name: Check formatting
+      - name: Setup LLVM 22
         run: |
-          find src include lib test -name '*.cpp' -o -name '*.h' -o -name '*.hpp' 2>/dev/null | \
-          xargs clang-format-15 --dry-run --Werror
+          sudo apt-get update
+          sudo apt-get install -y wget gnupg
+
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 22
+
+      - name: Install clang-format
+        run: sudo apt-get install -y clang-format-22
+
+      - name: Run formatter check
+        run: ./scripts/check-formatter.sh
       
-      # Jeśli chcesz zobaczyć różnice gdy formatowanie jest złe:
-      - name: Show formatting differences
+      - name: Show clang-format diff (debug)
         if: failure()
         run: |
-          echo "Formatting errors found! Run locally:"
-          echo "  clang-format -i <file>"
-          echo ""
-          echo "Differences:"
-          find src include lib test -name '*.cpp' -o -name '*.h' -o -name '*.hpp' 2>/dev/null | \
+          echo "DIFF FROM clang-format:"
+          find src include lib test -name '*.cpp' -o -name '*.h' -o -name '*.hpp' | \
           while read file; do
-            diff -u "$file" <(clang-format-15 "$file") 2>/dev/null && echo "---"
+            echo "----- $file -----"
+            clang-format "$file" | diff -u "$file" - || true
           done
 
   # Job 2: Static Code Analysis (zamiast clang-format)
