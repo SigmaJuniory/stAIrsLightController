@@ -1,6 +1,5 @@
 #include "fakes/FakePWMDevice.h"
 #include <gtest/gtest.h>
-#include <list>
 #include <map>
 #include <vector>
 
@@ -14,7 +13,7 @@ struct StepMapping {
 };
 
 struct Config {
-  std::list<StepMapping> stepMappings;
+  std::vector<StepMapping> stepMappings;
 };
 
 class StairStep {
@@ -37,6 +36,8 @@ public:
   createStaircaseFromConfig(const Config &config, std::map<uint8_t, IPWMDevice *> &pwmDevices) {
     std::vector<std::unique_ptr<StairStep>> staircases;
 
+    // TODO: chagne it to automaticly craete step mapping with modulo
+    std::vector<StepMapping> stepMappings = config.stepMappings;
     for (const auto &stepMapping : config.stepMappings) {
       auto deviceIt = pwmDevices.find(stepMapping.expanderI2CAddress);
       if (deviceIt != pwmDevices.end()) {
@@ -58,7 +59,7 @@ FakePWMDevice fakePWM(16);
 
 std::map<uint8_t, IPWMDevice *> fakeDevices = {{stepMapping1.expanderI2CAddress, &fakePWM}};
 
-std::list<StepMapping> stepMappings = {stepMapping1, stepMapping2};
+std::vector<StepMapping> stepMappings = {stepMapping1, stepMapping2};
 
 Config config1 = {.stepMappings = stepMappings};
 } // namespace
