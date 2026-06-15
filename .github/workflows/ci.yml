@@ -83,6 +83,39 @@ jobs:
         run: pio test -e native
         env:
           PLATFORMIO_FORCE_COLOR: true
+  
+  gdb-test:
+    name: GDB Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Build tests
+        run: pio test -e native --without-testing
+
+      - name: Install GDB
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gdb
+
+      - name: Run under GDB
+        run: |
+          gdb \
+            --batch \
+            -ex "run" \
+            -ex "bt full" \
+            -ex "thread apply all bt full" \
+            .pio/build/native/program
+
   # Job 4: Check Status
   ci-status:
     name: CI Status
