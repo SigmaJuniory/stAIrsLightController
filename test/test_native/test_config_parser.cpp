@@ -1,6 +1,8 @@
 #include <ArduinoJson.h>
 #include <fstream>
 #include <gtest/gtest.h>
+#include <memory>
+#include <string>
 
 namespace {
 constexpr auto jsonInput = R"({
@@ -54,8 +56,9 @@ struct StairConfig {
 };
 
 struct Config {
+  constexpr static size_t MAX_STAIRS = 10;
   GlobalSettings globalSettings;
-  std::vector<StairConfig> stairs{};
+  std::array<StairConfig, MAX_STAIRS> stairs;
 };
 
 class ConfigParser {
@@ -85,12 +88,13 @@ public:
 
     parseGlobalSettings(doc["globalSettings"], config);
 
+    size_t index = 0;
     for (const auto &stair : doc["stairs"].as<JsonArray>()) {
       StairConfig stairConfig;
 
       parseStairConfig(stair, stairConfig);
 
-      config.stairs.push_back(stairConfig);
+      config.stairs[index++] = stairConfig;
     }
 
     return config;
@@ -151,7 +155,7 @@ TEST_F(ConfigParserTest, ParsesStaircaseConfig) {
   ASSERT_EQ(config.globalSettings.lightMode.night.yellowLightBrightness, 100);
   ASSERT_EQ(config.globalSettings.lightMode.night.whiteLightBrightness, 100);
 
-  ASSERT_EQ(config.stairs.size(), 2);
+  ASSERT_EQ(config.stairs.size(), 10);
 
   ASSERT_EQ(config.stairs[0].stepsCount, 5);
   ASSERT_FALSE(config.stairs[0].hasLightMode);
