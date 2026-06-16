@@ -84,7 +84,7 @@ jobs:
         run: pip install platformio
       
       - name: Run native tests
-        run: pio test -e native
+        run: pio test -e test-native
         env:
           PLATFORMIO_FORCE_COLOR: true
   # Job 4: Check Status
