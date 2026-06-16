@@ -62,7 +62,7 @@ jobs:
           pip install platformio
       
       - name: Run static analysis
-        run: pio check -e native --fail-on-defect=medium
+        run: pio check -e release-esp32 --fail-on-defect=medium
         env:
           PLATFORMIO_FORCE_COLOR: true
 
