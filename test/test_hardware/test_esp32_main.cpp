@@ -7,23 +7,23 @@
 // TEST_F(...)
 
 TEST(Sanity, TrueIsTrue) {
-  EXPECT_TRUE(true);
+    EXPECT_TRUE(true);
 }
 
 TEST(Sanity, IsItFalse) {
-  EXPECT_FALSE(false);
+    EXPECT_FALSE(false);
 }
 
 void setup() {
-  Serial.begin(115200);
+    Serial.begin(115200);
 
-  ::testing::InitGoogleTest();
+    ::testing::InitGoogleTest();
 }
 
 void loop() {
-  static bool executed = false;
-  if (!executed) {
-    (void)RUN_ALL_TESTS();
-    executed = true;
-  }
+    static bool executed = false;
+    if (!executed) {
+        (void)RUN_ALL_TESTS();
+        executed = true;
+    }
 }

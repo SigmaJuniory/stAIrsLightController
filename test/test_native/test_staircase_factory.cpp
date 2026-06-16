@@ -6,47 +6,47 @@
 class StaircaseFactoryTest : public ::testing::Test {};
 
 struct StepMapping {
-  uint8_t stepId;
-  uint8_t expanderI2CAddress;
-  uint8_t channelWarm;
-  uint8_t channelCold;
+    uint8_t stepId;
+    uint8_t expanderI2CAddress;
+    uint8_t channelWarm;
+    uint8_t channelCold;
 };
 
 struct Config {
-  std::vector<StepMapping> stepMappings;
+    std::vector<StepMapping> stepMappings;
 };
 
 class StairStep {
-public:
-  explicit StairStep(const StepMapping &stepMapping, IPWMDevice *pwmDevice)
-      : stepMapping(stepMapping), pwmDevice(pwmDevice) {}
+  public:
+    explicit StairStep(const StepMapping &stepMapping, IPWMDevice *pwmDevice)
+        : stepMapping(stepMapping), pwmDevice(pwmDevice) {}
 
-  void setWarm(uint16_t value) {
-    pwmDevice->setPWM(stepMapping.channelWarm, value);
-  }
+    void setWarm(uint16_t value) {
+        pwmDevice->setPWM(stepMapping.channelWarm, value);
+    }
 
-private:
-  StepMapping stepMapping;
-  IPWMDevice *pwmDevice;
+  private:
+    StepMapping stepMapping;
+    IPWMDevice *pwmDevice;
 };
 
 class StaircaseFactory {
-public:
-  static std::vector<std::unique_ptr<StairStep>>
-  createStaircaseFromConfig(const Config &config, std::map<uint8_t, IPWMDevice *> &pwmDevices) {
-    std::vector<std::unique_ptr<StairStep>> staircases;
+  public:
+    static std::vector<std::unique_ptr<StairStep>>
+    createStaircaseFromConfig(const Config &config, std::map<uint8_t, IPWMDevice *> &pwmDevices) {
+        std::vector<std::unique_ptr<StairStep>> staircases;
 
-    // TODO: chagne it to automaticly craete step mapping with modulo
-    std::vector<StepMapping> stepMappings = config.stepMappings;
-    for (const auto &stepMapping : config.stepMappings) {
-      auto deviceIt = pwmDevices.find(stepMapping.expanderI2CAddress);
-      if (deviceIt != pwmDevices.end()) {
-        staircases.push_back(std::make_unique<StairStep>(stepMapping, deviceIt->second));
-      }
+        // TODO: chagne it to automaticly craete step mapping with modulo
+        std::vector<StepMapping> stepMappings = config.stepMappings;
+        for (const auto &stepMapping : config.stepMappings) {
+            auto deviceIt = pwmDevices.find(stepMapping.expanderI2CAddress);
+            if (deviceIt != pwmDevices.end()) {
+                staircases.push_back(std::make_unique<StairStep>(stepMapping, deviceIt->second));
+            }
+        }
+
+        return staircases;
     }
-
-    return staircases;
-  }
 };
 
 namespace {
@@ -66,12 +66,12 @@ Config config1 = {.stepMappings = stepMappings};
 
 TEST_F(StaircaseFactoryTest, CreateStaircaseFromConfig) {
 
-  auto staircases = StaircaseFactory::createStaircaseFromConfig(config1, fakeDevices);
+    auto staircases = StaircaseFactory::createStaircaseFromConfig(config1, fakeDevices);
 
-  ASSERT_TRUE(staircases.size() == 2);
-  staircases.at(0)->setWarm(123);
-  staircases.at(1)->setWarm(456);
+    ASSERT_TRUE(staircases.size() == 2);
+    staircases.at(0)->setWarm(123);
+    staircases.at(1)->setWarm(456);
 
-  EXPECT_EQ(fakePWM.getPWM(stepMapping1.channelWarm), 123);
-  EXPECT_EQ(fakePWM.getPWM(stepMapping2.channelWarm), 456);
+    EXPECT_EQ(fakePWM.getPWM(stepMapping1.channelWarm), 123);
+    EXPECT_EQ(fakePWM.getPWM(stepMapping2.channelWarm), 456);
 }

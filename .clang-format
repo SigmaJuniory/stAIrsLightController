@@ -13,8 +13,8 @@ AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
 
 # --- Indentation and spacing (Matching your code) ---
-# Indentation: 2 spaces
-IndentWidth: 2
+# Indentation: 4 spaces
+IndentWidth: 4
 
 # --- Other useful settings ---
 # Maximum line length
