@@ -1,0 +1,32 @@
+{
+  "globalSettings": {
+    "lightMode": {
+      "day": {
+        "YellowLightBrightness": 80,
+        "WhiteLightBrightness": 60
+      },
+      "night": {
+        "YellowLightBrightness": 100,
+        "WhiteLightBrightness": 100
+      }
+    }
+  },
+  "stairs": [
+    {
+      "stepsCount": 5
+    },
+    {
+      "stepsCount": 18,
+      "lightMode": {
+        "day": {
+          "YellowLightBrightness": 50,
+          "WhiteLightBrightness": 40
+        },
+        "night": {
+          "YellowLightBrightness": 100,
+          "WhiteLightBrightness": 100
+        }
+      }
+    }
+  ]
+}

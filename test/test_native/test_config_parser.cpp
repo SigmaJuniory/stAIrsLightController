@@ -1,8 +1,5 @@
-#include <ArduinoJson.h>
-#include <fstream>
+#include "ConfigParser.h"
 #include <gtest/gtest.h>
-#include <memory>
-#include <string>
 
 namespace {
 constexpr auto jsonInput = R"({
@@ -35,108 +32,6 @@ constexpr auto jsonConfig = R"({
 
 } // namespace
 
-struct LightLevel {
-    uint8_t yellowLightBrightness{};
-    uint8_t whiteLightBrightness{};
-};
-
-struct LightMode {
-    LightLevel day;
-    LightLevel night;
-};
-
-struct GlobalSettings {
-    LightMode lightMode;
-};
-
-struct StairConfig {
-    int stepsCount{};
-    bool hasLightMode{};
-    LightMode lightMode;
-};
-
-struct Config {
-    constexpr static size_t MAX_STAIRS = 10;
-    GlobalSettings globalSettings;
-    std::array<StairConfig, MAX_STAIRS> stairs;
-};
-
-class ConfigParser {
-  public:
-    static Config parseConfigFromFile(const std::string &filePath) {
-        std::ifstream file(filePath);
-
-        if (!file.is_open()) {
-            throw std::runtime_error("Cannot open file: " + filePath);
-        }
-
-        std::string jsonString((std::istreambuf_iterator<char>(file)),
-                               std::istreambuf_iterator<char>());
-        file.close();
-
-        return parseConfigFromJson(jsonString);
-    }
-
-    static Config parseConfigFromJson(const std::string_view json) {
-        JsonDocument doc;
-        const auto error = deserializeJson(doc, json);
-
-        if (error) {
-            throw std::runtime_error(error.c_str());
-        }
-        Config config;
-
-        parseGlobalSettings(doc["globalSettings"], config);
-
-        size_t index = 0;
-        for (const auto &stair : doc["stairs"].as<JsonArray>()) {
-            StairConfig stairConfig;
-
-            parseStairConfig(stair, stairConfig);
-
-            config.stairs[index++] = stairConfig;
-        }
-
-        return config;
-    }
-
-  private:
-    static void parseStairConfig(const JsonObject &stairJson, StairConfig &stairConfig) {
-        stairConfig.stepsCount = stairJson["stepsCount"];
-        if (auto lightMode = stairJson["lightMode"]; !lightMode.isNull()) {
-            stairConfig.hasLightMode = true;
-
-            stairConfig.lightMode.day.yellowLightBrightness =
-                lightMode["day"]["YellowLightBrightness"];
-
-            stairConfig.lightMode.day.whiteLightBrightness =
-                lightMode["day"]["WhiteLightBrightness"];
-
-            stairConfig.lightMode.night.yellowLightBrightness =
-                lightMode["night"]["YellowLightBrightness"];
-
-            stairConfig.lightMode.night.whiteLightBrightness =
-                lightMode["night"]["WhiteLightBrightness"];
-        }
-    }
-
-    static void parseGlobalSettings(const JsonObject &globalSettingsJson, Config &config) {
-        auto lightMode = globalSettingsJson["lightMode"];
-
-        config.globalSettings.lightMode.day.yellowLightBrightness =
-            lightMode["day"]["YellowLightBrightness"];
-
-        config.globalSettings.lightMode.day.whiteLightBrightness =
-            lightMode["day"]["WhiteLightBrightness"];
-
-        config.globalSettings.lightMode.night.yellowLightBrightness =
-            lightMode["night"]["YellowLightBrightness"];
-
-        config.globalSettings.lightMode.night.whiteLightBrightness =
-            lightMode["night"]["WhiteLightBrightness"];
-    }
-};
-
 TEST(Sanity, ParsesFromJson) {
     JsonDocument doc;
     deserializeJson(doc, jsonInput);
@@ -158,7 +53,7 @@ TEST_F(ConfigParserTest, ParsesStaircaseConfig) {
     ASSERT_EQ(config.globalSettings.lightMode.night.yellowLightBrightness, 100);
     ASSERT_EQ(config.globalSettings.lightMode.night.whiteLightBrightness, 100);
 
-    ASSERT_EQ(config.stairs.size(), 10);
+    ASSERT_EQ(config.stairs.size(), 2);
 
     ASSERT_EQ(config.stairs[0].stepsCount, 5);
     ASSERT_FALSE(config.stairs[0].hasLightMode);
