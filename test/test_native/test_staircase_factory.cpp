@@ -1,6 +1,6 @@
 #include "ConfigParser.h"
-#include "StaticVector.h"
 #include "fakes/FakePWMDevice.h"
+#include "staticVector.h"
 #include <ArduinoJson.h>
 #include <cstdlib>
 #include <ctime>
