@@ -82,9 +82,9 @@ class StaircaseFactory {
         uint8_t globalStepId = 0;
         uint8_t baseI2CAddress = 0x40;
 
-        for (uint8_t stairIdx = 0; stairIdx < config.stairs.size(); stairIdx++) {
+        for (size_t stairIdx = 0; stairIdx < config.stairs.size(); stairIdx++) {
             const auto &stairConfig = config.stairs[stairIdx];
-            for (uint8_t i = 0; i < stairConfig.stepsCount; i++) {
+            for (int i = 0; i < stairConfig.stepsCount; i++) {
                 uint8_t expanderIndex = globalStepId / 8;
                 uint8_t expanderI2CAddress = baseI2CAddress + expanderIndex;
 
@@ -93,7 +93,7 @@ class StaircaseFactory {
 
                 StepMapping stepMapping{
                     .stepId = globalStepId,
-                    .stairIndex = stairIdx,
+                    .stairIndex = static_cast<uint8_t>(stairIdx),
                     .expanderI2CAddress = expanderI2CAddress,
                     .dayYellowBrightness = lightMode.day.yellowLightBrightness,
                     .dayWhiteBrightness = lightMode.day.whiteLightBrightness,
