@@ -1,4 +1,4 @@
-#include "fakes/FakePWMDevice.h"
+#include "fakes/fake_pwm_device.h"
 #include <algorithm>
 
 FakePWMDevice::FakePWMDevice(size_t channelsCount) : channels(channelsCount, 0) {}

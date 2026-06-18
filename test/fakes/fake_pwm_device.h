@@ -1,5 +1,5 @@
 #pragma once
-#include "interfaces/IPWMDevice.h"
+#include "interfaces/ipwm_device.h"
 #include <vector>
 
 class FakePWMDevice : public IPWMDevice {

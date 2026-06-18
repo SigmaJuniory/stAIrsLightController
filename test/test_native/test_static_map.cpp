@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "staticMap.h"
+#include "static_map.h"
 
 TEST(StaticMap, EmptyMap) {
     static_map<int, int, 8> map;

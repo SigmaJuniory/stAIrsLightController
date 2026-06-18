@@ -115,4 +115,16 @@ template <typename Key, typename Value, std::size_t N> class static_map {
     auto end() const noexcept {
         return data.begin() + count;
     }
+
+    constexpr static_map() = default;
+
+    constexpr static_map(std::initializer_list<std::pair<Key, Value>> init) {
+        if (init.size() > N) {
+            throw std::length_error("initializer_list size exceeds static_map capacity");
+        }
+
+        for (const auto &item : init) {
+            insert(item.first, item.second);
+        }
+    }
 };

@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
-#include <staticVector.h>
+#include <static_vector.h>
 #include <string>
 
 struct LightLevel {
@@ -58,7 +58,6 @@ class ConfigParser {
 
         parseGlobalSettings(doc["globalSettings"], config);
 
-        size_t index = 0;
         for (const auto &stair : doc["stairs"].as<JsonArray>()) {
             StairConfig stairConfig;
 
