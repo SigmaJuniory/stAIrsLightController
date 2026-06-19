@@ -1,9 +1,6 @@
 #include "pwm_device.h"
 
-PWMDevice::PWMDevice(const uint8_t addr, TwoWire &i2c)
-    : pwmDriver_(addr, i2c) {
-          // workaround for formating
-      };
+PWMDevice::PWMDevice(const uint8_t addr, TwoWire &i2c) : pwmDriver_(addr, i2c) {};
 
 bool PWMDevice::begin() {
     return pwmDriver_.begin();
