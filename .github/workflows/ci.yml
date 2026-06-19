@@ -8,26 +8,16 @@ permissions:
   contents: read
 
 jobs:
-  # Job 1: Sprawdzenie formatowania kodu
+  # Job 1: Check formating with clang-format
   check-formatting:
     name: Check Code Formatting
     runs-on: ubuntu-latest
+    container:
+      image: silkeh/clang:21
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
-      - name: Setup LLVM 22
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget gnupg
-
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh 22
-
-      - name: Install clang-format
-        run: sudo apt-get install -y clang-format-22
 
       - name: Run formatter check
         run: ./scripts/check-formatter.sh
@@ -42,7 +32,7 @@ jobs:
             clang-format "$file" | diff -u "$file" - || true
           done
 
-  # Job 2: Static Code Analysis (zamiast clang-format)
+  # Job 2: Static Code Analysis
   static-analysis:
     name: Static Code Analysis
     runs-on: ubuntu-latest
@@ -66,9 +56,9 @@ jobs:
         env:
           PLATFORMIO_FORCE_COLOR: true
 
-  # Job 3: Testy native
+  # Job 3: Release build and Native test
   native-tests:
-    name: Native Tests
+    name: Verify Build and Native Tests
     runs-on: ubuntu-latest
     
     steps:
@@ -82,6 +72,9 @@ jobs:
       
       - name: Install PlatformIO
         run: pip install platformio
+
+      - name: Verify release build
+        run: pio test -e release-esp32 --without-uploading --without-testing
       
       - name: Run native tests
         run: pio test -e test-native

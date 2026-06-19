@@ -2,7 +2,6 @@
 #include <gtest/gtest.h>
 // uncomment line below if you plan to use GMock
 // #include <gmock/gmock.h>
-
 // TEST(...)
 // TEST_F(...)
 
@@ -16,6 +15,8 @@ TEST(Sanity, IsItFalse) {
 
 void setup() {
     Serial.begin(115200);
+    delay(1000);
+    Serial.println("Start testing...");
 
     ::testing::InitGoogleTest();
 }
