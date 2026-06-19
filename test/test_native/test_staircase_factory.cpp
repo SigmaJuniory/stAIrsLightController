@@ -1,13 +1,25 @@
-#include "ConfigParser.h"
-#include "fakes/FakePWMDevice.h"
-#include "staticVector.h"
+#include "config_parser.h"
+#include "fakes/fake_pwm_device.h"
+#include "static_map.h"
+#include "static_vector.h"
 #include <ArduinoJson.h>
 #include <cstdlib>
 #include <ctime>
 #include <gtest/gtest.h>
 #include <map>
 
-class StaircaseFactoryTest : public ::testing::Test {};
+// TODO: MOVE TO global_const.h etc
+namespace {
+constexpr uint8_t CHANNELS_PER_EXPANDER = 16;
+constexpr uint8_t BASE_I2C_ADRESS = 0x40;
+constexpr uint8_t CHANNELS_PER_STEP = 2;
+constexpr uint8_t STEPS_PER_PWM_DEVICE = CHANNELS_PER_EXPANDER / CHANNELS_PER_STEP;
+constexpr uint8_t DAY_START = 7;
+constexpr uint8_t NIGHT_START = 19;
+constexpr uint8_t MAX_NUM_OF_STEPS = 64;
+} // namespace
+
+enum class LightModeE : uint8_t { DayMode, NightMode };
 
 struct StepMapping {
     uint8_t stepId;
@@ -19,33 +31,31 @@ struct StepMapping {
     uint8_t nightWhiteBrightness;
 };
 
-// static_vector<StepMapping, 64> stepMappings; // Max 64 steps (8 expanders * 8 steps)
-
 class StairStep {
   public:
     StairStep() = default; // needed for creating static_vector;
     explicit StairStep(const StepMapping &stepMapping, IPWMDevice *pwmDevice)
-        : stepMapping(stepMapping), pwmDevice(pwmDevice), isDayMode(true) {}
+        : stepMapping(stepMapping), pwmDevice(pwmDevice), mode(LightModeE::DayMode) {}
 
-    // Auto-detect day/night mode based on current time (7-19 = day, else = night)
     void updateModeBasedOnTime() {
         time_t now = time(nullptr);
         struct tm *timeinfo = localtime(&now);
         int hour = timeinfo->tm_hour;
-        isDayMode = (hour >= 7 && hour < 19);
+        mode =
+            (hour >= DAY_START && hour < NIGHT_START) ? LightModeE::DayMode : LightModeE::NightMode;
     }
 
     void setYellow() {
-        uint8_t brightness =
-            isDayMode ? stepMapping.dayYellowBrightness : stepMapping.nightYellowBrightness;
-        uint8_t channelWarm = (stepMapping.stepId % 8) * 2;
+        uint8_t brightness = mode == LightModeE::DayMode ? stepMapping.dayYellowBrightness
+                                                         : stepMapping.nightYellowBrightness;
+        uint8_t channelWarm = (stepMapping.stepId % STEPS_PER_PWM_DEVICE) * 2;
         pwmDevice->setPWM(channelWarm, brightness);
     }
 
     void setWhite() {
-        uint8_t brightness =
-            isDayMode ? stepMapping.dayWhiteBrightness : stepMapping.nightWhiteBrightness;
-        uint8_t channelCold = (stepMapping.stepId % 8) * 2 + 1;
+        uint8_t brightness = mode == LightModeE::DayMode ? stepMapping.dayWhiteBrightness
+                                                         : stepMapping.nightWhiteBrightness;
+        uint8_t channelCold = (stepMapping.stepId % STEPS_PER_PWM_DEVICE) * 2 + 1;
         pwmDevice->setPWM(channelCold, brightness);
     }
 
@@ -54,12 +64,12 @@ class StairStep {
         setWhite();
     }
 
-    void setMode(bool dayMode) {
-        isDayMode = dayMode;
+    void setMode(LightModeE mode) {
+        this->mode = mode;
     }
 
-    bool getMode() const {
-        return isDayMode;
+    LightModeE getMode() const {
+        return mode;
     }
 
     // Legacy method name for compatibility
@@ -67,25 +77,30 @@ class StairStep {
         setYellow();
     }
 
-    StepMapping stepMapping; // it supose to be private
+    StepMapping getStepMapping() {
+        return stepMapping;
+    }
+
   private:
+    StepMapping stepMapping;
     IPWMDevice *pwmDevice;
-    bool isDayMode;
+    LightModeE mode;
 };
 
 class StaircaseFactory {
   public:
-    static static_vector<StairStep, 64>
-    createStaircaseFromConfig(const Config &config, std::map<uint8_t, IPWMDevice *> &pwmDevices) {
-        static_vector<StairStep, 64> staircases;
+    static static_vector<StairStep, MAX_NUM_OF_STEPS>
+    createStaircaseFromConfig(const Config &config,
+                              static_map<uint8_t, IPWMDevice *, MAX_NUM_OF_STEPS> &pwmDevices) {
+        static_vector<StairStep, MAX_NUM_OF_STEPS> staircases;
 
         uint8_t globalStepId = 0;
-        uint8_t baseI2CAddress = 0x40;
+        uint8_t baseI2CAddress = BASE_I2C_ADRESS;
 
         for (size_t stairIdx = 0; stairIdx < config.stairs.size(); stairIdx++) {
             const auto &stairConfig = config.stairs[stairIdx];
             for (int i = 0; i < stairConfig.stepsCount; i++) {
-                uint8_t expanderIndex = globalStepId / 8;
+                uint8_t expanderIndex = globalStepId / STEPS_PER_PWM_DEVICE;
                 uint8_t expanderI2CAddress = baseI2CAddress + expanderIndex;
 
                 LightMode lightMode = (stairConfig.hasLightMode) ? stairConfig.lightMode
@@ -110,123 +125,192 @@ class StaircaseFactory {
 };
 
 namespace {
-FakePWMDevice fakePWM_0x40(16);
-FakePWMDevice fakePWM_0x41(16);
-FakePWMDevice fakePWM_0x42(16);
 
-std::map<uint8_t, IPWMDevice *> fakeDevices = {
-    {0x40, &fakePWM_0x40}, {0x41, &fakePWM_0x41}, {0x42, &fakePWM_0x42}};
+FakePWMDevice fakePWM_1(16);
+FakePWMDevice fakePWM_2(16);
+FakePWMDevice fakePWM_3(16);
 
-std::string configPath = "test/test_native/config.json";
-const Config config = ConfigParser::parseConfigFromFile(configPath);
+static_map<uint8_t, IPWMDevice *, MAX_NUM_OF_STEPS> fakeDevices = {
+    {BASE_I2C_ADRESS, &fakePWM_1},
+    {BASE_I2C_ADRESS + 1, &fakePWM_2},
+    {BASE_I2C_ADRESS + 2, &fakePWM_3}};
+
+constexpr uint8_t defaultDayYellowBrightness = 80;
+constexpr uint8_t defaultDayWhiteBrightness = 60;
+constexpr uint8_t defaultNightYellowBrightness = 100;
+constexpr uint8_t defaultNightWhiteBrightness = 100;
+
+constexpr uint8_t stairSpecyficDayYellowBrightness = 50;
+constexpr uint8_t stairSpecyficDayWhiteBrightness = 40;
+constexpr uint8_t stairSpecyficNightYellowBrightness = 100;
+constexpr uint8_t stairSpecyficNightWhiteBrightness = 150;
+
+constexpr uint8_t numberOfStairsWithoutLightMode = 5;
+constexpr uint8_t numberOfStairsWithLightMode = 18;
+
+constexpr Config createTestConfig() {
+    Config cfg;
+
+    cfg.globalSettings.lightMode =
+        LightMode{.day = {.yellowLightBrightness = defaultDayYellowBrightness,
+                          .whiteLightBrightness = defaultDayWhiteBrightness},
+                  .night = {.yellowLightBrightness = defaultNightYellowBrightness,
+                            .whiteLightBrightness = defaultNightWhiteBrightness}};
+
+    StairConfig stairWithoutLightMode{
+        .stepsCount = numberOfStairsWithoutLightMode, .hasLightMode = false, .lightMode = {}};
+
+    StairConfig stairWithLightMode{
+        .stepsCount = numberOfStairsWithLightMode,
+        .hasLightMode = true,
+        .lightMode = {.day = {.yellowLightBrightness = stairSpecyficDayYellowBrightness,
+                              .whiteLightBrightness = stairSpecyficDayWhiteBrightness},
+                      .night = {.yellowLightBrightness = stairSpecyficNightYellowBrightness,
+                                .whiteLightBrightness = stairSpecyficNightWhiteBrightness}}};
+
+    cfg.stairs.push_back(stairWithoutLightMode);
+    cfg.stairs.push_back(stairWithLightMode);
+
+    return cfg;
+}
+
+constexpr Config config = createTestConfig();
+
+const auto staircasesCount = []() {
+    uint8_t count = 0;
+    for (const auto &stairConfig : config.stairs) {
+        count += stairConfig.stepsCount;
+    }
+    return count;
+}();
 
 } // namespace
+
+class StaircaseFactoryTest : public ::testing::Test {
+  protected:
+    static constexpr uint8_t getYellowChannel(size_t stepIndex) {
+        return (stepIndex % STEPS_PER_PWM_DEVICE) * 2;
+    }
+
+    static constexpr uint8_t getWhiteChannel(size_t stepIndex) {
+        return (stepIndex % STEPS_PER_PWM_DEVICE) * 2 + 1;
+    }
+};
 
 TEST_F(StaircaseFactoryTest, verifyStepMapping) {
     auto staircases = StaircaseFactory::createStaircaseFromConfig(config, fakeDevices);
 
-    // Verify step mappings (5 + 18 = 23 total steps)
-    ASSERT_EQ(staircases.size(), 23);
+    ASSERT_EQ(staircases.size(), staircasesCount);
 
-    // Verify modulo 8 logic: steps 0-7 use 0x40, steps 8-15 use 0x41, steps 16-23 use 0x42
-    // Verify brightness values are set correctly
-    for (size_t i = 0; i < 5; i++) {
-        EXPECT_EQ(staircases[i].stepMapping.expanderI2CAddress, 0x40);
-        EXPECT_EQ(staircases[i].stepMapping.dayYellowBrightness, 80);    // global default day
-        EXPECT_EQ(staircases[i].stepMapping.dayWhiteBrightness, 60);     // global default day
-        EXPECT_EQ(staircases[i].stepMapping.nightYellowBrightness, 100); // global default night
-        EXPECT_EQ(staircases[i].stepMapping.nightWhiteBrightness, 100);  // global default night
+    // Verify modulo logic
+    for (size_t i = 0; i < staircasesCount; i++) {
+        uint8_t expanderIndex = i / STEPS_PER_PWM_DEVICE;
+        EXPECT_EQ(staircases[i].getStepMapping().expanderI2CAddress,
+                  BASE_I2C_ADRESS + expanderIndex);
     }
 
-    for (size_t i = 5; i < 23; i++) {
-        uint8_t expanderIndex = i / 8;
-        EXPECT_EQ(staircases[i].stepMapping.expanderI2CAddress, 0x40 + expanderIndex);
-        EXPECT_EQ(staircases[i].stepMapping.dayYellowBrightness, 50);    // stair-specific day
-        EXPECT_EQ(staircases[i].stepMapping.dayWhiteBrightness, 40);     // stair-specific day
-        EXPECT_EQ(staircases[i].stepMapping.nightYellowBrightness, 100); // stair-specific night
-        EXPECT_EQ(staircases[i].stepMapping.nightWhiteBrightness, 100);  // stair-specific night
+    // Verify brightness values are set correctly
+    for (size_t i = 0; i < numberOfStairsWithoutLightMode; i++) {
+        const auto stepMapping = staircases[i].getStepMapping();
+
+        EXPECT_EQ(stepMapping.dayYellowBrightness, defaultDayYellowBrightness);
+        EXPECT_EQ(stepMapping.dayWhiteBrightness, defaultDayWhiteBrightness);
+        EXPECT_EQ(stepMapping.nightYellowBrightness, defaultNightYellowBrightness);
+        EXPECT_EQ(stepMapping.nightWhiteBrightness, defaultNightWhiteBrightness);
+    }
+
+    for (size_t i = numberOfStairsWithoutLightMode; i < numberOfStairsWithoutLightMode; i++) {
+        const auto stepMapping = staircases[i].getStepMapping();
+
+        EXPECT_EQ(stepMapping.dayYellowBrightness, stairSpecyficDayYellowBrightness);
+        EXPECT_EQ(stepMapping.dayWhiteBrightness, stairSpecyficDayWhiteBrightness);
+        EXPECT_EQ(stepMapping.nightYellowBrightness, stairSpecyficNightYellowBrightness);
+        EXPECT_EQ(stepMapping.nightWhiteBrightness, stairSpecyficNightWhiteBrightness);
     }
 }
 
-TEST_F(StaircaseFactoryTest, checkLightModes) {
+TEST_F(StaircaseFactoryTest, DayAndNightModeBrightnessForGlobalSettings) {
     auto staircases = StaircaseFactory::createStaircaseFromConfig(config, fakeDevices);
+    constexpr size_t stepIndex = 0;
+    constexpr uint8_t yellowChan = getYellowChannel(stepIndex);
+    constexpr uint8_t whiteChan = getWhiteChannel(stepIndex);
 
-    // Verify all steps were created (5 + 18 = 23)
-    ASSERT_EQ(staircases.size(), 23);
+    staircases[stepIndex].setMode(LightModeE::DayMode);
+    staircases[stepIndex].setYellow();
+    staircases[stepIndex].setWhite();
+    EXPECT_EQ(fakePWM_1.getPWM(yellowChan), defaultDayYellowBrightness);
+    EXPECT_EQ(fakePWM_1.getPWM(whiteChan), defaultDayWhiteBrightness);
 
-    // Test DAY MODE for first stair (steps 0-4, yellow: 80, white: 60)
-    staircases[0].setMode(true); // day mode
-    staircases[0].setYellow();
-    staircases[0].setWhite();
+    staircases[stepIndex].setMode(LightModeE::NightMode);
+    staircases[stepIndex].setYellow();
+    staircases[stepIndex].setWhite();
+    EXPECT_EQ(fakePWM_1.getPWM(yellowChan), defaultNightYellowBrightness);
+    EXPECT_EQ(fakePWM_1.getPWM(whiteChan), defaultNightWhiteBrightness);
+}
 
-    EXPECT_EQ(fakePWM_0x40.getPWM(0), 80); // step 0, channel yellow, day brightness
-    EXPECT_EQ(fakePWM_0x40.getPWM(1), 60); // step 0, channel white, day brightness
+TEST_F(StaircaseFactoryTest, SetAllMethodAppliesStairSpecificBrightness) {
+    auto staircases = StaircaseFactory::createStaircaseFromConfig(config, fakeDevices);
+    constexpr size_t stepIndex = 5;
+    constexpr uint8_t yellowChan = getYellowChannel(stepIndex);
+    constexpr uint8_t whiteChan = getWhiteChannel(stepIndex);
 
-    // Test NIGHT MODE for first stair (steps 0-4, yellow: 100, white: 100)
-    staircases[0].setMode(false); // night mode
-    staircases[0].setYellow();
-    staircases[0].setWhite();
+    staircases[stepIndex].setMode(LightModeE::DayMode);
+    staircases[stepIndex].setAll();
+    EXPECT_EQ(fakePWM_1.getPWM(yellowChan), stairSpecyficDayYellowBrightness);
+    EXPECT_EQ(fakePWM_1.getPWM(whiteChan), stairSpecyficDayWhiteBrightness);
 
-    EXPECT_EQ(fakePWM_0x40.getPWM(0), 100); // step 0, channel yellow, night brightness
-    EXPECT_EQ(fakePWM_0x40.getPWM(1), 100); // step 0, channel white, night brightness
+    staircases[stepIndex].setMode(LightModeE::NightMode);
+    staircases[stepIndex].setAll();
+    EXPECT_EQ(fakePWM_1.getPWM(yellowChan), stairSpecyficNightYellowBrightness);
+    EXPECT_EQ(fakePWM_1.getPWM(whiteChan), stairSpecyficNightWhiteBrightness);
+}
 
-    // Test setAll() in day mode for second stair step (yellow: 50, white: 40)
-    staircases[5].setMode(true); // day mode
-    staircases[5].setAll();
+TEST_F(StaircaseFactoryTest, CorrectlyRoutesPWMToSecondExpander) {
+    auto staircases = StaircaseFactory::createStaircaseFromConfig(config, fakeDevices);
+    constexpr size_t stepIndex = 8;
+    constexpr uint8_t yellowChan = getYellowChannel(stepIndex);
 
-    EXPECT_EQ(fakePWM_0x40.getPWM(10), 50); // step 5, channel yellow, day mode
-    EXPECT_EQ(fakePWM_0x40.getPWM(11), 40); // step 5, channel white, day mode
+    staircases[stepIndex].setMode(LightModeE::DayMode);
+    staircases[stepIndex].setYellow();
+    EXPECT_EQ(fakePWM_2.getPWM(yellowChan), stairSpecyficDayYellowBrightness);
 
-    // Test setAll() in night mode for second stair (yellow: 100, white: 100)
-    staircases[5].setMode(false); // night mode
-    staircases[5].setAll();
+    staircases[stepIndex].setMode(LightModeE::NightMode);
+    staircases[stepIndex].setYellow();
+    EXPECT_EQ(fakePWM_2.getPWM(yellowChan), stairSpecyficNightYellowBrightness);
+}
 
-    EXPECT_EQ(fakePWM_0x40.getPWM(10), 100); // step 5, channel yellow, night mode
-    EXPECT_EQ(fakePWM_0x40.getPWM(11), 100); // step 5, channel white, night mode
+TEST_F(StaircaseFactoryTest, LegacySetWarmMethodWorksCorrectly) {
+    auto staircases = StaircaseFactory::createStaircaseFromConfig(config, fakeDevices);
+    constexpr size_t stepIndex = 16;
+    constexpr uint8_t yellowChan = getYellowChannel(stepIndex);
 
-    // Test across expanders (step 8, stair 2, yellow: 50 day / 100 night, white: 40 day / 100
-    // night)
-    staircases[8].setMode(true);
-    staircases[8].setYellow();
-    EXPECT_EQ(fakePWM_0x41.getPWM(0), 50); // day mode
+    staircases[stepIndex].setMode(LightModeE::DayMode);
+    staircases[stepIndex].setWarm();
+    EXPECT_EQ(fakePWM_3.getPWM(yellowChan), stairSpecyficDayYellowBrightness);
 
-    staircases[8].setMode(false);
-    staircases[8].setYellow();
-    EXPECT_EQ(fakePWM_0x41.getPWM(0), 100); // night mode
-
-    // Test legacy setWarm() with day mode
-    staircases[16].setMode(true);
-    staircases[16].setWarm();
-    EXPECT_EQ(fakePWM_0x42.getPWM(0), 50); // step 16, day mode
-
-    // Test legacy setWarm() with night mode
-    staircases[16].setMode(false);
-    staircases[16].setWarm();
-    EXPECT_EQ(fakePWM_0x42.getPWM(0), 100); // step 16, night mode
+    staircases[stepIndex].setMode(LightModeE::NightMode);
+    staircases[stepIndex].setWarm();
+    EXPECT_EQ(fakePWM_3.getPWM(yellowChan), stairSpecyficNightYellowBrightness);
 }
 
 TEST_F(StaircaseFactoryTest, AutomaticTimeBasedModeDetection) {
-
     auto staircases = StaircaseFactory::createStaircaseFromConfig(config, fakeDevices);
 
-    // Test automatic mode detection based on current time
-    // Hours 7-19 should be day mode, others should be night mode
     time_t now = time(nullptr);
     struct tm *timeinfo = localtime(&now);
     int currentHour = timeinfo->tm_hour;
-    bool shouldBeDay = (currentHour >= 7 && currentHour < 19);
+
+    bool shouldBeDay = (currentHour >= DAY_START && currentHour < NIGHT_START);
 
     staircases[0].updateModeBasedOnTime();
 
     if (shouldBeDay) {
-        // In day mode (7-19): yellow 80, white 60
         staircases[0].setAll();
-        EXPECT_EQ(fakePWM_0x40.getPWM(0), 80); // yellow day
-        EXPECT_EQ(fakePWM_0x40.getPWM(1), 60); // white day
+        EXPECT_EQ(fakePWM_1.getPWM(0), defaultDayYellowBrightness);
+        EXPECT_EQ(fakePWM_1.getPWM(1), defaultDayWhiteBrightness);
     } else {
-        // In night mode (<7 or >=19): yellow 100, white 100
         staircases[0].setAll();
-        EXPECT_EQ(fakePWM_0x40.getPWM(0), 100); // yellow night
-        EXPECT_EQ(fakePWM_0x40.getPWM(1), 100); // white night
+        EXPECT_EQ(fakePWM_1.getPWM(0), defaultNightYellowBrightness);
+        EXPECT_EQ(fakePWM_1.getPWM(1), defaultNightWhiteBrightness);
     }
 }

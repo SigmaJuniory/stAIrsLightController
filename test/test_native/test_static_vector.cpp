@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "staticVector.h"
+#include "static_vector.h"
 
 TEST(StaticVector, EmptyVector) {
     static_vector<int, 8> vec;

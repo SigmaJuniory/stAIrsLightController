@@ -1,4 +1,4 @@
-#include "ConfigParser.h"
+#include "config_parser.h"
 #include <gtest/gtest.h>
 
 namespace {
@@ -64,4 +64,10 @@ TEST_F(ConfigParserTest, ParsesStaircaseConfig) {
     ASSERT_EQ(config.stairs[1].lightMode.day.whiteLightBrightness, 40);
     ASSERT_EQ(config.stairs[1].lightMode.night.yellowLightBrightness, 100);
     ASSERT_EQ(config.stairs[1].lightMode.night.whiteLightBrightness, 100);
+}
+
+TEST_F(ConfigParserTest, ParsesStaircaseConfigFromFile) {
+    Config config = ConfigParser::parseConfigFromFile("test/test_native/config.json");
+
+    ASSERT_EQ(config.globalSettings.lightMode.day.yellowLightBrightness, 80);
 }

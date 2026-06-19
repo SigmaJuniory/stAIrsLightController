@@ -13,7 +13,8 @@ template <typename T, std::size_t N> class static_vector {
         return N;
     }
 
-    void push_back(const T &v) {
+    // TODO: propably most of the funciton in "static"containers can be constexpr
+    constexpr void push_back(const T &v) {
         if (count < N) {
             data[count++] = v;
         } else {
@@ -21,7 +22,7 @@ template <typename T, std::size_t N> class static_vector {
         }
     }
 
-    void push_back(T &&v) {
+    constexpr void push_back(T &&v) {
         if (count < N) {
             data[count++] = std::move(v);
         } else {

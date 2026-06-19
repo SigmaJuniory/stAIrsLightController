@@ -1,4 +1,3 @@
-#include "fakes/FakePWMDevice.h"
 #include <gtest/gtest.h>
 
 #if defined(ARDUINO)
