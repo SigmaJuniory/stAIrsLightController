@@ -1,6 +1,9 @@
 #include "pwm_device.h"
 
-PWMDevice::PWMDevice(const uint8_t addr, TwoWire &i2c) : pwmDriver_(addr, i2c) {};
+PWMDevice::PWMDevice(const uint8_t addr, TwoWire &i2c)
+    : pwmDriver_(addr, i2c) {
+          // workaround for formating
+      };
 
 bool PWMDevice::begin() {
     return pwmDriver_.begin();
@@ -8,7 +11,6 @@ bool PWMDevice::begin() {
 
 void PWMDevice::setPWMFreq(float freq) {
     pwmDriver_.setPWMFreq(freq);
-    ;
 }
 
 uint16_t PWMDevice::getPWM(uint8_t channel) {

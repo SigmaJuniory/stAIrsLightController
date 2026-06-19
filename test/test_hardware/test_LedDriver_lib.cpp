@@ -1,19 +1,12 @@
 #include "pwm_device.h"
 #include <Arduino.h>
 #include <gtest/gtest.h>
+// TODO: Use Unity instead gtest for hardware tests
 
-bool wireInitialized = false;
-
-void initWire() {
-    if (!wireInitialized) {
-        Wire.setPins(13, 14);
-        Wire.begin();
-        wireInitialized = true;
-    }
-}
 class LedDriverTestBase : public ::testing::Test {
   protected:
     PWMDevice *ledDriver = nullptr;
+    bool wireInitialized = false;
 
     void SetUp() override {
         initWire();
@@ -28,16 +21,24 @@ class LedDriverTestBase : public ::testing::Test {
             ledDriver = nullptr;
         }
     }
+
+    void initWire() {
+        if (!wireInitialized) {
+            Wire.setPins(13, 14);
+            Wire.begin();
+            wireInitialized = true;
+        }
+    }
 };
 
-class LedDriverTestWithInit : public ::testing::Test {
+class LedDriverTestWithInit : public LedDriverTestBase {
   protected:
-    PWMDevice *ledDriver = nullptr;
     void SetUp() override {
         initWire();
+        // TODO: use unique_ptr or static inicialisation
         ledDriver = new PWMDevice(0x40, Wire);
         bool init = ledDriver->begin();
-        ASSERT_TRUE(init) << "Inicjalizacja nie powiodła się!";
+        ASSERT_TRUE(init) << "Inicialisation of PWMDevice failed!";
 
         ledDriver->setPWMFreq(1000);
 
@@ -45,16 +46,6 @@ class LedDriverTestWithInit : public ::testing::Test {
             ledDriver->setPWM(i, 0);
         }
         delay(10);
-    }
-
-    void TearDown() override {
-        if (ledDriver != nullptr) {
-            for (int i = 0; i < 16; i++) {
-                ledDriver->setPWM(i, 0);
-            }
-            delete ledDriver;
-            ledDriver = nullptr;
-        }
     }
 };
 
