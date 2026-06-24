@@ -5,3 +5,9 @@ services:
       - ..:/workspace
     working_dir: /workspace
     command: bash
+  format:
+    image: ghcr.io/sigmajuniory/stairs-light-ci:latest
+    volumes:
+      - ..:/workspace
+    working_dir: /workspace
+    command: ./scripts/formatter.sh
