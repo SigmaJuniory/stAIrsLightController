@@ -1,29 +1,12 @@
-FROM ubuntu:24.04
+FROM python:3.11-slim
 
-RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-venv \
-    wget \
-    gnupg \
-    lsb-release \
-    software-properties-common \
-    build-essential \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    g++ \
     && rm -rf /var/lib/apt/lists/*
 
-RUN python3 -m venv /opt/platformio
-RUN /opt/platformio/bin/pip install platformio==6.1.18
+RUN pip install --no-cache-dir \
+    platformio==6.1.18 \
+    clang-format==21.1.0
 
-ENV PATH="/opt/platformio/bin:$PATH"
-RUN pio --version
-
-RUN wget https://apt.llvm.org/llvm.sh && \
-    chmod +x llvm.sh && \
-    ./llvm.sh 21 && \
-    apt-get update && \
-    apt-get install -y clang-format-21 && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN ln -s /usr/bin/clang-format-21 /usr/bin/clang-format
-
-RUN clang-format --version
-RUN pio --version
+RUN clang-format --version && pio --version
