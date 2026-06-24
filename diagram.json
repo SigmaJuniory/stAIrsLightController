@@ -1,0 +1,28 @@
+{
+  "version":1,
+  "editor":"wokwi",
+  "parts":[
+    {"type":"board-esp32-s3-devkitc-1","id":"esp","top":0,"left":0,"attrs":{}},
+    {"type":"chip-pca9685","id":"chip1","top":-200,"left":200,"attrs":{"gen_debug":"1","i2c_debug":"1","debug_timer":"1"}},
+    {"type":"wokwi-led","id":"led0","top":-100,"left":300,"attrs":{"color":"orange"}},
+    {"type":"wokwi-led","id":"coldLed","top":0,"left":300,"attrs":{"color":"white"}}
+  ],
+  "connections":[
+    ["esp:TX","$serialMonitor:RX","",[]],
+    ["esp:RX","$serialMonitor:TX","",[]],
+    ["esp:21","chip1:SDA","green",["h0"]],
+    ["esp:20","chip1:SCL","green",["h0"]],
+    ["esp:GND.2","chip1:GND","black",["h0"]],
+    ["chip1:A0","esp:GND.2","black",["h0"]],
+    ["chip1:A1","esp:GND.2","black",["h0"]],
+    ["chip1:A2","esp:GND.2","black",["h0"]],
+    ["chip1:A3","esp:GND.2","black",["h0"]],
+    ["chip1:A4","esp:GND.2","black",["h0"]],
+    ["chip1:A5","esp:GND.2","black",["h0"]],
+    ["chip1:LED0","led0:A","orange",["h0"]],
+    ["led0:C","esp:GND.2","black",["h0"]],
+    ["chip1:LED1","coldLed:A","white",["h0"]],
+    ["coldLed:C","esp:GND.2","black",["h0"]]
+  ],
+  "dependencies":{"chip-pca9685":"github:bonnyr/wokwi-pca9685-custom-chip@0.1.1"}
+}

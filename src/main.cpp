@@ -1,18 +1,25 @@
 #include <Arduino.h>
+#include <Wire.h>
+#include "pwm_device.h"
 
-// put function declarations here:
-int myFunction(int, int);
+PWMDevice pwm(0x40, Wire);
 
 void setup() {
-    // put your setup code here, to run once:
-    int result = myFunction(2, 3);
+  Serial.begin(115200);
+
+  Wire.begin(21,20);
+
+  if (!pwm.begin()) {
+    Serial.println("FAIL");
+    return;
+  }
+
+  pwm.setPWMFreq(1000);
+
+  // stopień 0
+  pwm.setPWM(0, 2000);
+
+  pwm.setPWM(1, 2000);
 }
 
-void loop() {
-    // put your main code here, to run repeatedly:
-}
-
-// put function definitions here:
-int myFunction(int x, int y) {
-    return x + y;
-}
+void loop() {}
