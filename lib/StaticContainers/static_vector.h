@@ -1,4 +1,10 @@
 #pragma once
+
+#include <array>
+#include <cstddef>
+#include <stdexcept>
+#include <utility>
+
 // Static vector implementation for embedded systems - no dynamic allocation
 template <typename T, std::size_t N> class static_vector {
   private:

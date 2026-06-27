@@ -1,4 +1,5 @@
 #include "config_parser.h"
+#include <ArduinoJson.h>
 #include <gtest/gtest.h>
 
 namespace {
