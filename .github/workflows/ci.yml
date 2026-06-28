@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  packages: read
 
 jobs:
   # Job 1: Check formating with clang-format
@@ -13,8 +14,10 @@ jobs:
     name: Check Code Formatting
     runs-on: ubuntu-latest
     container:
-      image: silkeh/clang:21
-    
+      image: ghcr.io/sigmajuniory/stairs-light-ci:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -36,21 +39,15 @@ jobs:
   static-analysis:
     name: Static Code Analysis
     runs-on: ubuntu-latest
-    
+    container:
+      image: ghcr.io/sigmajuniory/stairs-light-ci:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      
-      - name: Install PlatformIO
-        run: |
-          python -m pip install --upgrade pip
-          pip install platformio
-      
+       
       - name: Run static analysis
         run: pio check -e release-esp32 --fail-on-defect=medium
         env:
@@ -60,19 +57,15 @@ jobs:
   native-tests:
     name: Verify Build and Native Tests
     runs-on: ubuntu-latest
-    
+    container:
+      image: ghcr.io/sigmajuniory/stairs-light-ci:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      
-      - name: Install PlatformIO
-        run: pip install platformio
-
       - name: Verify release build
         run: pio test -e release-esp32 --without-uploading --without-testing
       
@@ -83,7 +76,7 @@ jobs:
   # Job 4: Check Status
   ci-status:
     name: CI Status
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     needs:
       - check-formatting
       - static-analysis
