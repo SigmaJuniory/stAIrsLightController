@@ -19,7 +19,7 @@ template <typename T, std::size_t N> class static_vector {
         return N;
     }
 
-    // TODO: propably most of the funcitons in "static"containers can be constexpr
+    // TODO: Probably most functions in static containers can be constexpr.
     constexpr void push_back(const T &v) {
         if (count < N) {
             data[count++] = v;

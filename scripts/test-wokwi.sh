@@ -1,4 +1,5 @@
 #!/usr/bin/env zsh
+# TODO: Add Wokwi to the CLI environment.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."

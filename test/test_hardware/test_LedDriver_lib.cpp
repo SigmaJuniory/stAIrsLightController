@@ -5,7 +5,7 @@
 namespace {
 constexpr uint8_t pwmDriverAddress = 0x40;
 constexpr uint8_t missingDeviceAddress = 0x50;
-constexpr uint8_t i2cSdaPin = 21;
+constexpr uint8_t i2cSdaPin = 21; // TODO: Make this correct for ESP32 and Wokwi.
 constexpr uint8_t i2cSclPin = 20;
 constexpr uint8_t pwmChannelsCount = 16;
 
