@@ -1,5 +1,7 @@
 #pragma once
 
+#include "pwm_types.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <static_vector.h>
@@ -8,8 +10,8 @@
 constexpr std::size_t MAX_STAIRS_COUNT = 10;
 
 struct LightLevel {
-    uint8_t yellowLightBrightness{};
-    uint8_t whiteLightBrightness{};
+    PwmValue yellowLightBrightness{};
+    PwmValue whiteLightBrightness{};
 };
 
 struct LightMode {

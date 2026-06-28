@@ -10,8 +10,8 @@ class PWMDevice : public IPWMDevice {
 
     bool begin() override;
     void setPWMFreq(float freq);
-    uint16_t getPWM(uint8_t channel);
-    void setPWM(uint8_t channel, uint16_t val) override;
+    PwmValue getPWM(uint8_t channel);
+    void setPWM(uint8_t channel, PwmValue val) override;
 
   private:
     Adafruit_PWMServoDriver pwmDriver_;

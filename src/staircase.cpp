@@ -13,15 +13,15 @@ void StairStep::updateModeBasedOnTime() {
 }
 
 void StairStep::setYellow() {
-    uint8_t brightness = mode == LightModeE::DayMode ? stepMapping.dayYellowBrightness
-                                                     : stepMapping.nightYellowBrightness;
+    PwmValue brightness = mode == LightModeE::DayMode ? stepMapping.dayYellowBrightness
+                                                      : stepMapping.nightYellowBrightness;
     uint8_t channelWarm = (stepMapping.stepId % STEPS_PER_PWM_DEVICE) * 2;
     pwmDevice->setPWM(channelWarm, brightness);
 }
 
 void StairStep::setWhite() {
-    uint8_t brightness = mode == LightModeE::DayMode ? stepMapping.dayWhiteBrightness
-                                                     : stepMapping.nightWhiteBrightness;
+    PwmValue brightness = mode == LightModeE::DayMode ? stepMapping.dayWhiteBrightness
+                                                      : stepMapping.nightWhiteBrightness;
     uint8_t channelCold = (stepMapping.stepId % STEPS_PER_PWM_DEVICE) * 2 + 1;
     pwmDevice->setPWM(channelCold, brightness);
 }

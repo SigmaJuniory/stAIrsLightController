@@ -7,13 +7,13 @@ bool FakePWMDevice::begin() {
     return true;
 }
 
-void FakePWMDevice::setPWM(uint8_t channel, uint16_t value) {
+void FakePWMDevice::setPWM(uint8_t channel, PwmValue value) {
     if (channel < channels.size()) {
         channels[channel] = std::min(value, MAX_PWM);
     }
 }
 
-uint16_t FakePWMDevice::getPWM(uint8_t channel) const {
+PwmValue FakePWMDevice::getPWM(uint8_t channel) const {
     if (channel < channels.size()) {
         return channels[channel];
     }

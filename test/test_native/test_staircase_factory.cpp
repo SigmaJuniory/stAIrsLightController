@@ -17,15 +17,15 @@ static_map<uint8_t, IPWMDevice *, MAX_NUM_OF_STEPS> fakeDevices = {
     {BASE_I2C_ADRESS + 1, &fakePWM_2},
     {BASE_I2C_ADRESS + 2, &fakePWM_3}};
 
-constexpr uint8_t defaultDayYellowBrightness = 80;
-constexpr uint8_t defaultDayWhiteBrightness = 60;
-constexpr uint8_t defaultNightYellowBrightness = 100;
-constexpr uint8_t defaultNightWhiteBrightness = 100;
+constexpr PwmValue defaultDayYellowBrightness = 2000;
+constexpr PwmValue defaultDayWhiteBrightness = 1800;
+constexpr PwmValue defaultNightYellowBrightness = 100;
+constexpr PwmValue defaultNightWhiteBrightness = 100;
 
-constexpr uint8_t stairSpecyficDayYellowBrightness = 50;
-constexpr uint8_t stairSpecyficDayWhiteBrightness = 40;
-constexpr uint8_t stairSpecyficNightYellowBrightness = 100;
-constexpr uint8_t stairSpecyficNightWhiteBrightness = 150;
+constexpr PwmValue stairSpecyficDayYellowBrightness = 1500;
+constexpr PwmValue stairSpecyficDayWhiteBrightness = 1200;
+constexpr PwmValue stairSpecyficNightYellowBrightness = 100;
+constexpr PwmValue stairSpecyficNightWhiteBrightness = 150;
 
 constexpr uint8_t numberOfStairsWithoutLightMode = 5;
 constexpr uint8_t numberOfStairsWithLightMode = 18;
