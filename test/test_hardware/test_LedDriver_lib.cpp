@@ -1,17 +1,22 @@
 #include "pwm_device.h"
 #include <Arduino.h>
 #include <gtest/gtest.h>
-// TODO: Use Unity instead gtest for hardware tests
 
 namespace {
-constexpr uint8_t i2cSdaPin = 21; // TODO: Make this correct for ESP32 and Wokwi.
+
+#ifdef WOKWI_SIMULATOR_TEST
+constexpr uint8_t i2cSdaPin = 21;
 constexpr uint8_t i2cSclPin = 20;
-bool wireInitialized = false;
+#else
+constexpr uint8_t i2cSdaPin = 13;
+constexpr uint8_t i2cSclPin = 14;
+#endif
 } // namespace
 
 class LedDriverTestBase : public ::testing::Test {
   protected:
     PWMDevice *ledDriver = nullptr;
+    bool wireInitialized = false;
 
     void SetUp() override {
         initWire();
