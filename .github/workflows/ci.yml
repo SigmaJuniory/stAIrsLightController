@@ -67,7 +67,7 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Verify release build
-        run: pio test -e release-esp32 --without-uploading --without-testing
+        run: pio run -e release-esp32
       
       - name: Run native tests
         run: pio test -e test-native
