@@ -3,10 +3,10 @@
 #include <gtest/gtest.h>
 // TODO: Use Unity instead gtest for hardware tests
 
+bool wireInitialized = false;
 class LedDriverTestBase : public ::testing::Test {
   protected:
     PWMDevice *ledDriver = nullptr;
-    bool wireInitialized = false;
 
     void SetUp() override {
         initWire();
