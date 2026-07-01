@@ -12,6 +12,6 @@ wokwi-cli \
   --elf .pio/build/test-wokwi/firmware.elf \
   --diagram-file diagram.json \
   --timeout 30000 \
-  --expect-text OK \
-  --fail-text FAIL \
+  --expect-text "[  PASSED  ]" \
+  --fail-text "[  FAILED  ]" \
   .
