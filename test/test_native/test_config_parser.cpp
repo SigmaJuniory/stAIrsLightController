@@ -1,4 +1,5 @@
 #include "config_parser.h"
+#include <ArduinoJson.h>
 #include <gtest/gtest.h>
 
 namespace {
@@ -11,7 +12,7 @@ constexpr auto jsonConfig = R"({
     "globalSettings": {
         "lightMode": {
             "day": {             
-                "YellowLightBrightness": 80, "WhiteLightBrightness": 60 },
+                "YellowLightBrightness": 2000, "WhiteLightBrightness": 1800 },
             "night": { 
                 "YellowLightBrightness": 100, "WhiteLightBrightness": 100 }
         }
@@ -23,7 +24,7 @@ constexpr auto jsonConfig = R"({
         {
             "stepsCount": 18,
             "lightMode": {
-                "day": { "YellowLightBrightness": 50, "WhiteLightBrightness": 40 },
+                "day": { "YellowLightBrightness": 1500, "WhiteLightBrightness": 1200 },
                 "night": { "YellowLightBrightness": 100, "WhiteLightBrightness": 100 }
             }
         }
@@ -48,8 +49,8 @@ class ConfigParserTest : public ::testing::Test {};
 TEST_F(ConfigParserTest, ParsesStaircaseConfig) {
     Config config = ConfigParser::parseConfigFromJson(jsonConfig);
 
-    ASSERT_EQ(config.globalSettings.lightMode.day.yellowLightBrightness, 80);
-    ASSERT_EQ(config.globalSettings.lightMode.day.whiteLightBrightness, 60);
+    ASSERT_EQ(config.globalSettings.lightMode.day.yellowLightBrightness, 2000);
+    ASSERT_EQ(config.globalSettings.lightMode.day.whiteLightBrightness, 1800);
     ASSERT_EQ(config.globalSettings.lightMode.night.yellowLightBrightness, 100);
     ASSERT_EQ(config.globalSettings.lightMode.night.whiteLightBrightness, 100);
 
@@ -60,8 +61,8 @@ TEST_F(ConfigParserTest, ParsesStaircaseConfig) {
 
     ASSERT_EQ(config.stairs[1].stepsCount, 18);
     ASSERT_TRUE(config.stairs[1].hasLightMode);
-    ASSERT_EQ(config.stairs[1].lightMode.day.yellowLightBrightness, 50);
-    ASSERT_EQ(config.stairs[1].lightMode.day.whiteLightBrightness, 40);
+    ASSERT_EQ(config.stairs[1].lightMode.day.yellowLightBrightness, 1500);
+    ASSERT_EQ(config.stairs[1].lightMode.day.whiteLightBrightness, 1200);
     ASSERT_EQ(config.stairs[1].lightMode.night.yellowLightBrightness, 100);
     ASSERT_EQ(config.stairs[1].lightMode.night.whiteLightBrightness, 100);
 }

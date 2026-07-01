@@ -1,4 +1,10 @@
 #pragma once
+
+#include <array>
+#include <cstddef>
+#include <stdexcept>
+#include <utility>
+
 // Static vector implementation for embedded systems - no dynamic allocation
 template <typename T, std::size_t N> class static_vector {
   private:
@@ -13,7 +19,7 @@ template <typename T, std::size_t N> class static_vector {
         return N;
     }
 
-    // TODO: propably most of the funcitons in "static"containers can be constexpr
+    // TODO: Probably most functions in static containers can be constexpr.
     constexpr void push_back(const T &v) {
         if (count < N) {
             data[count++] = v;
