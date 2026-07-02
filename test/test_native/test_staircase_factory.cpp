@@ -5,6 +5,7 @@
 
 #include <ctime>
 #include <gtest/gtest.h>
+#include <stdexcept>
 
 namespace {
 
@@ -58,6 +59,18 @@ constexpr Config createTestConfig() {
 
 constexpr Config config = createTestConfig();
 
+Config createConfigWithStepsCount(const int stepsCount) {
+    Config cfg;
+    cfg.globalSettings.lightMode = LightMode{.day = {.yellowLightBrightness = defaultDayYellowBrightness,
+                                                  .whiteLightBrightness = defaultDayWhiteBrightness},
+                                            .night = {.yellowLightBrightness = defaultNightYellowBrightness,
+                                                      .whiteLightBrightness = defaultNightWhiteBrightness}};
+    cfg.stairs.push_back(StairConfig{.stepsCount = stepsCount,
+                                     .hasLightMode = false,
+                                     .lightMode = {}});
+    return cfg;
+}
+
 const auto staircasesCount = []() {
     uint8_t count = 0;
     for (const auto &stairConfig : config.stairs) {
@@ -78,6 +91,52 @@ class StaircaseFactoryTest : public ::testing::Test {
         return (stepIndex % STEPS_PER_PWM_DEVICE) * 2 + 1;
     }
 };
+
+TEST_F(StaircaseFactoryTest, countsRequiredPwmExpandersFromConfiguredSteps) {
+    EXPECT_EQ(StaircaseFactory::countRequiredPwmExpanders(config), 3u);
+}
+
+TEST_F(StaircaseFactoryTest, countsExpectedNumberOfPwmExpandersForSampleStepCounts) {
+    EXPECT_EQ(StaircaseFactory::countRequiredPwmExpanders(createConfigWithStepsCount(32)), 4u);
+    EXPECT_EQ(StaircaseFactory::countRequiredPwmExpanders(createConfigWithStepsCount(40)), 5u);
+    EXPECT_EQ(StaircaseFactory::countRequiredPwmExpanders(createConfigWithStepsCount(48)), 6u);
+}
+
+TEST_F(StaircaseFactoryTest, assignsStepsAcrossFourExpandersForThirtyTwoSteps) {
+    Config cfg = createConfigWithStepsCount(32);
+
+    FakePWMDevice pwm0(16);
+    FakePWMDevice pwm1(16);
+    FakePWMDevice pwm2(16);
+    FakePWMDevice pwm3(16);
+
+    static_map<uint8_t, IPWMDevice *, MAX_NUM_OF_STEPS> pwmDevices;
+    pwmDevices.insert(BASE_I2C_ADRESS + 0, &pwm0);
+    pwmDevices.insert(BASE_I2C_ADRESS + 1, &pwm1);
+    pwmDevices.insert(BASE_I2C_ADRESS + 2, &pwm2);
+    pwmDevices.insert(BASE_I2C_ADRESS + 3, &pwm3);
+
+    auto staircases = StaircaseFactory::createStaircaseFromConfig(cfg, pwmDevices);
+
+    ASSERT_EQ(staircases.size(), 32u);
+    EXPECT_EQ(staircases[0].getStepMapping().expanderI2CAddress, BASE_I2C_ADRESS + 0);
+    EXPECT_EQ(staircases[7].getStepMapping().expanderI2CAddress, BASE_I2C_ADRESS + 0);
+    EXPECT_EQ(staircases[8].getStepMapping().expanderI2CAddress, BASE_I2C_ADRESS + 1);
+    EXPECT_EQ(staircases[15].getStepMapping().expanderI2CAddress, BASE_I2C_ADRESS + 1);
+    EXPECT_EQ(staircases[16].getStepMapping().expanderI2CAddress, BASE_I2C_ADRESS + 2);
+    EXPECT_EQ(staircases[23].getStepMapping().expanderI2CAddress, BASE_I2C_ADRESS + 2);
+    EXPECT_EQ(staircases[24].getStepMapping().expanderI2CAddress, BASE_I2C_ADRESS + 3);
+    EXPECT_EQ(staircases[31].getStepMapping().expanderI2CAddress, BASE_I2C_ADRESS + 3);
+}
+
+TEST_F(StaircaseFactoryTest, rejectsConfigurationsThatExceedSupportedStepCapacity) {
+    Config oversizedConfig;
+    oversizedConfig.globalSettings.lightMode = config.globalSettings.lightMode;
+    oversizedConfig.stairs.push_back(
+        StairConfig{.stepsCount = MAX_NUM_OF_STEPS + 1, .hasLightMode = false, .lightMode = {}});
+
+    EXPECT_THROW(StaircaseFactory::validateConfig(oversizedConfig), std::invalid_argument);
+}
 
 TEST_F(StaircaseFactoryTest, verifyStepMapping) {
     auto staircases = StaircaseFactory::createStaircaseFromConfig(config, fakeDevices);

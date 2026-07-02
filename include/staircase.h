@@ -53,4 +53,7 @@ class StaircaseFactory {
     static static_vector<StairStep, MAX_NUM_OF_STEPS>
     createStaircaseFromConfig(const Config &config,
                               static_map<uint8_t, IPWMDevice *, MAX_NUM_OF_STEPS> &pwmDevices);
+
+    static std::size_t countRequiredPwmExpanders(const Config &config);
+    static void validateConfig(const Config &config);
 };
