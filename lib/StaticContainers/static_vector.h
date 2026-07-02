@@ -36,23 +36,23 @@ template <typename T, std::size_t N> class static_vector {
         }
     }
 
-    T &operator[](std::size_t i) noexcept {
+    constexpr T &operator[](std::size_t i) noexcept {
         return data[i];
     }
-    const T &operator[](std::size_t i) const noexcept {
+    constexpr const T &operator[](std::size_t i) const noexcept {
         return data[i];
     }
 
-    T *begin() noexcept {
-        return data.begin();
+    constexpr T *begin() noexcept {
+        return data.data();
     }
-    T *end() noexcept {
-        return data.begin() + count;
+    constexpr T *end() noexcept {
+        return data.data() + count;
     }
-    const T *begin() const noexcept {
-        return data.begin();
+    constexpr const T *begin() const noexcept {
+        return data.data();
     }
-    const T *end() const noexcept {
-        return data.begin() + count;
+    constexpr const T *end() const noexcept {
+        return data.data() + count;
     }
 };

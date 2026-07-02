@@ -10,9 +10,8 @@
 constexpr std::size_t MAX_STAIRS_COUNT = 10;
 
 struct LightLevel {
-    // TODO: Store brightness as a percentage instead of PwmValue, and align tests.
-    PwmValue yellowLightBrightness{};
-    PwmValue whiteLightBrightness{};
+    BrightnessPercentage yellowLightBrightness{};
+    BrightnessPercentage whiteLightBrightness{};
 };
 
 struct LightMode {

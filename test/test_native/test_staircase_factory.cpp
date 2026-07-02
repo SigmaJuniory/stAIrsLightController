@@ -17,15 +17,27 @@ static_map<uint8_t, IPWMDevice *, MAX_NUM_OF_STEPS> fakeDevices = {
     {BASE_I2C_ADRESS + 1, &fakePWM_2},
     {BASE_I2C_ADRESS + 2, &fakePWM_3}};
 
-constexpr PwmValue defaultDayYellowBrightness = 2000;
-constexpr PwmValue defaultDayWhiteBrightness = 1800;
-constexpr PwmValue defaultNightYellowBrightness = 100;
-constexpr PwmValue defaultNightWhiteBrightness = 100;
+constexpr BrightnessPercentage defaultDayYellowBrightnessPercentage = 80;
+constexpr BrightnessPercentage defaultDayWhiteBrightnessPercentage = 60;
+constexpr BrightnessPercentage defaultNightYellowBrightnessPercentage = 10;
+constexpr BrightnessPercentage defaultNightWhiteBrightnessPercentage = 5;
 
-constexpr PwmValue stairSpecyficDayYellowBrightness = 1500;
-constexpr PwmValue stairSpecyficDayWhiteBrightness = 1200;
-constexpr PwmValue stairSpecyficNightYellowBrightness = 100;
-constexpr PwmValue stairSpecyficNightWhiteBrightness = 150;
+constexpr BrightnessPercentage stairSpecyficDayYellowBrightnessPercentage = 50;
+constexpr BrightnessPercentage stairSpecyficDayWhiteBrightnessPercentage = 40;
+constexpr BrightnessPercentage stairSpecyficNightYellowBrightnessPercentage = 10;
+constexpr BrightnessPercentage stairSpecyficNightWhiteBrightnessPercentage = 15;
+
+// Expected PWM values are literal conversions from percentage inputs, using floor(4095 * percent /
+// 100).
+constexpr PwmValue expectedDefaultDayYellowPwm = 3276;
+constexpr PwmValue expectedDefaultDayWhitePwm = 2457;
+constexpr PwmValue expectedDefaultNightYellowPwm = 409;
+constexpr PwmValue expectedDefaultNightWhitePwm = 204;
+
+constexpr PwmValue expectedStairSpecyficDayYellowPwm = 2047;
+constexpr PwmValue expectedStairSpecyficDayWhitePwm = 1638;
+constexpr PwmValue expectedStairSpecyficNightYellowPwm = 409;
+constexpr PwmValue expectedStairSpecyficNightWhitePwm = 614;
 
 constexpr uint8_t numberOfStairsWithoutLightMode = 5;
 constexpr uint8_t numberOfStairsWithLightMode = 18;
@@ -34,10 +46,10 @@ constexpr Config createTestConfig() {
     Config cfg;
 
     cfg.globalSettings.lightMode =
-        LightMode{.day = {.yellowLightBrightness = defaultDayYellowBrightness,
-                          .whiteLightBrightness = defaultDayWhiteBrightness},
-                  .night = {.yellowLightBrightness = defaultNightYellowBrightness,
-                            .whiteLightBrightness = defaultNightWhiteBrightness}};
+        LightMode{.day = {.yellowLightBrightness = defaultDayYellowBrightnessPercentage,
+                          .whiteLightBrightness = defaultDayWhiteBrightnessPercentage},
+                  .night = {.yellowLightBrightness = defaultNightYellowBrightnessPercentage,
+                            .whiteLightBrightness = defaultNightWhiteBrightnessPercentage}};
 
     StairConfig stairWithoutLightMode{
         .stepsCount = numberOfStairsWithoutLightMode, .hasLightMode = false, .lightMode = {}};
@@ -45,10 +57,11 @@ constexpr Config createTestConfig() {
     StairConfig stairWithLightMode{
         .stepsCount = numberOfStairsWithLightMode,
         .hasLightMode = true,
-        .lightMode = {.day = {.yellowLightBrightness = stairSpecyficDayYellowBrightness,
-                              .whiteLightBrightness = stairSpecyficDayWhiteBrightness},
-                      .night = {.yellowLightBrightness = stairSpecyficNightYellowBrightness,
-                                .whiteLightBrightness = stairSpecyficNightWhiteBrightness}}};
+        .lightMode = {
+            .day = {.yellowLightBrightness = stairSpecyficDayYellowBrightnessPercentage,
+                    .whiteLightBrightness = stairSpecyficDayWhiteBrightnessPercentage},
+            .night = {.yellowLightBrightness = stairSpecyficNightYellowBrightnessPercentage,
+                      .whiteLightBrightness = stairSpecyficNightWhiteBrightnessPercentage}}};
 
     cfg.stairs.push_back(stairWithoutLightMode);
     cfg.stairs.push_back(stairWithLightMode);
@@ -58,7 +71,7 @@ constexpr Config createTestConfig() {
 
 constexpr Config config = createTestConfig();
 
-const auto staircasesCount = []() {
+constexpr auto staircasesCount = []() {
     uint8_t count = 0;
     for (const auto &stairConfig : config.stairs) {
         count += stairConfig.stepsCount;
@@ -95,19 +108,19 @@ TEST_F(StaircaseFactoryTest, verifyStepMapping) {
     for (size_t i = 0; i < numberOfStairsWithoutLightMode; i++) {
         const auto stepMapping = staircases[i].getStepMapping();
 
-        EXPECT_EQ(stepMapping.dayYellowBrightness, defaultDayYellowBrightness);
-        EXPECT_EQ(stepMapping.dayWhiteBrightness, defaultDayWhiteBrightness);
-        EXPECT_EQ(stepMapping.nightYellowBrightness, defaultNightYellowBrightness);
-        EXPECT_EQ(stepMapping.nightWhiteBrightness, defaultNightWhiteBrightness);
+        EXPECT_EQ(stepMapping.dayYellowBrightness, defaultDayYellowBrightnessPercentage);
+        EXPECT_EQ(stepMapping.dayWhiteBrightness, defaultDayWhiteBrightnessPercentage);
+        EXPECT_EQ(stepMapping.nightYellowBrightness, defaultNightYellowBrightnessPercentage);
+        EXPECT_EQ(stepMapping.nightWhiteBrightness, defaultNightWhiteBrightnessPercentage);
     }
 
     for (size_t i = numberOfStairsWithoutLightMode; i < staircasesCount; i++) {
         const auto stepMapping = staircases[i].getStepMapping();
 
-        EXPECT_EQ(stepMapping.dayYellowBrightness, stairSpecyficDayYellowBrightness);
-        EXPECT_EQ(stepMapping.dayWhiteBrightness, stairSpecyficDayWhiteBrightness);
-        EXPECT_EQ(stepMapping.nightYellowBrightness, stairSpecyficNightYellowBrightness);
-        EXPECT_EQ(stepMapping.nightWhiteBrightness, stairSpecyficNightWhiteBrightness);
+        EXPECT_EQ(stepMapping.dayYellowBrightness, stairSpecyficDayYellowBrightnessPercentage);
+        EXPECT_EQ(stepMapping.dayWhiteBrightness, stairSpecyficDayWhiteBrightnessPercentage);
+        EXPECT_EQ(stepMapping.nightYellowBrightness, stairSpecyficNightYellowBrightnessPercentage);
+        EXPECT_EQ(stepMapping.nightWhiteBrightness, stairSpecyficNightWhiteBrightnessPercentage);
     }
 }
 
@@ -120,14 +133,14 @@ TEST_F(StaircaseFactoryTest, DayAndNightModeBrightnessForGlobalSettings) {
     staircases[stepIndex].setMode(LightModeE::DayMode);
     staircases[stepIndex].setYellow();
     staircases[stepIndex].setWhite();
-    EXPECT_EQ(fakePWM_1.getPWM(yellowChan), defaultDayYellowBrightness);
-    EXPECT_EQ(fakePWM_1.getPWM(whiteChan), defaultDayWhiteBrightness);
+    EXPECT_EQ(fakePWM_1.getPWM(yellowChan), expectedDefaultDayYellowPwm);
+    EXPECT_EQ(fakePWM_1.getPWM(whiteChan), expectedDefaultDayWhitePwm);
 
     staircases[stepIndex].setMode(LightModeE::NightMode);
     staircases[stepIndex].setYellow();
     staircases[stepIndex].setWhite();
-    EXPECT_EQ(fakePWM_1.getPWM(yellowChan), defaultNightYellowBrightness);
-    EXPECT_EQ(fakePWM_1.getPWM(whiteChan), defaultNightWhiteBrightness);
+    EXPECT_EQ(fakePWM_1.getPWM(yellowChan), expectedDefaultNightYellowPwm);
+    EXPECT_EQ(fakePWM_1.getPWM(whiteChan), expectedDefaultNightWhitePwm);
 }
 
 TEST_F(StaircaseFactoryTest, SetAllMethodAppliesStairSpecificBrightness) {
@@ -138,13 +151,13 @@ TEST_F(StaircaseFactoryTest, SetAllMethodAppliesStairSpecificBrightness) {
 
     staircases[stepIndex].setMode(LightModeE::DayMode);
     staircases[stepIndex].setAll();
-    EXPECT_EQ(fakePWM_1.getPWM(yellowChan), stairSpecyficDayYellowBrightness);
-    EXPECT_EQ(fakePWM_1.getPWM(whiteChan), stairSpecyficDayWhiteBrightness);
+    EXPECT_EQ(fakePWM_1.getPWM(yellowChan), expectedStairSpecyficDayYellowPwm);
+    EXPECT_EQ(fakePWM_1.getPWM(whiteChan), expectedStairSpecyficDayWhitePwm);
 
     staircases[stepIndex].setMode(LightModeE::NightMode);
     staircases[stepIndex].setAll();
-    EXPECT_EQ(fakePWM_1.getPWM(yellowChan), stairSpecyficNightYellowBrightness);
-    EXPECT_EQ(fakePWM_1.getPWM(whiteChan), stairSpecyficNightWhiteBrightness);
+    EXPECT_EQ(fakePWM_1.getPWM(yellowChan), expectedStairSpecyficNightYellowPwm);
+    EXPECT_EQ(fakePWM_1.getPWM(whiteChan), expectedStairSpecyficNightWhitePwm);
 }
 
 TEST_F(StaircaseFactoryTest, CorrectlyRoutesPWMToSecondExpander) {
@@ -154,11 +167,11 @@ TEST_F(StaircaseFactoryTest, CorrectlyRoutesPWMToSecondExpander) {
 
     staircases[stepIndex].setMode(LightModeE::DayMode);
     staircases[stepIndex].setYellow();
-    EXPECT_EQ(fakePWM_2.getPWM(yellowChan), stairSpecyficDayYellowBrightness);
+    EXPECT_EQ(fakePWM_2.getPWM(yellowChan), expectedStairSpecyficDayYellowPwm);
 
     staircases[stepIndex].setMode(LightModeE::NightMode);
     staircases[stepIndex].setYellow();
-    EXPECT_EQ(fakePWM_2.getPWM(yellowChan), stairSpecyficNightYellowBrightness);
+    EXPECT_EQ(fakePWM_2.getPWM(yellowChan), expectedStairSpecyficNightYellowPwm);
 }
 
 TEST_F(StaircaseFactoryTest, LegacySetWarmMethodWorksCorrectly) {
@@ -168,11 +181,11 @@ TEST_F(StaircaseFactoryTest, LegacySetWarmMethodWorksCorrectly) {
 
     staircases[stepIndex].setMode(LightModeE::DayMode);
     staircases[stepIndex].setWarm();
-    EXPECT_EQ(fakePWM_3.getPWM(yellowChan), stairSpecyficDayYellowBrightness);
+    EXPECT_EQ(fakePWM_3.getPWM(yellowChan), expectedStairSpecyficDayYellowPwm);
 
     staircases[stepIndex].setMode(LightModeE::NightMode);
     staircases[stepIndex].setWarm();
-    EXPECT_EQ(fakePWM_3.getPWM(yellowChan), stairSpecyficNightYellowBrightness);
+    EXPECT_EQ(fakePWM_3.getPWM(yellowChan), expectedStairSpecyficNightYellowPwm);
 }
 
 TEST_F(StaircaseFactoryTest, AutomaticTimeBasedModeDetection) {
@@ -188,11 +201,11 @@ TEST_F(StaircaseFactoryTest, AutomaticTimeBasedModeDetection) {
 
     if (shouldBeDay) {
         staircases[0].setAll();
-        EXPECT_EQ(fakePWM_1.getPWM(0), defaultDayYellowBrightness);
-        EXPECT_EQ(fakePWM_1.getPWM(1), defaultDayWhiteBrightness);
+        EXPECT_EQ(fakePWM_1.getPWM(0), expectedDefaultDayYellowPwm);
+        EXPECT_EQ(fakePWM_1.getPWM(1), expectedDefaultDayWhitePwm);
     } else {
         staircases[0].setAll();
-        EXPECT_EQ(fakePWM_1.getPWM(0), defaultNightYellowBrightness);
-        EXPECT_EQ(fakePWM_1.getPWM(1), defaultNightWhiteBrightness);
+        EXPECT_EQ(fakePWM_1.getPWM(0), expectedDefaultNightYellowPwm);
+        EXPECT_EQ(fakePWM_1.getPWM(1), expectedDefaultNightWhitePwm);
     }
 }
