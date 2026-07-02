@@ -15,8 +15,8 @@ constexpr auto demoConfig = R"({
   "globalSettings": {
     "lightMode": {
       "day": {
-        "YellowLightBrightness": 2000,
-        "WhiteLightBrightness": 1800
+        "YellowLightBrightness": 80,
+        "WhiteLightBrightness": 60
       },
       "night": {
         "YellowLightBrightness": 80,

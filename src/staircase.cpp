@@ -2,6 +2,12 @@
 
 #include <ctime>
 
+namespace {
+PwmValue convertPercentageToPwmValue(BrightnessPercentage percentage) {
+    return (MAX_PWM_VALUE * percentage) / 100;
+}
+} // namespace
+
 StairStep::StairStep(const StepMapping &stepMapping, IPWMDevice *pwmDevice)
     : stepMapping(stepMapping), pwmDevice(pwmDevice), mode(LightModeE::DayMode) {}
 
@@ -13,17 +19,17 @@ void StairStep::updateModeBasedOnTime() {
 }
 
 void StairStep::setYellow() {
-    PwmValue brightness = mode == LightModeE::DayMode ? stepMapping.dayYellowBrightness
-                                                      : stepMapping.nightYellowBrightness;
+    const auto brightness = mode == LightModeE::DayMode ? stepMapping.dayYellowBrightness
+                                                        : stepMapping.nightYellowBrightness;
     uint8_t channelWarm = (stepMapping.stepId % STEPS_PER_PWM_DEVICE) * 2;
-    pwmDevice->setPWM(channelWarm, brightness);
+    pwmDevice->setPWM(channelWarm, convertPercentageToPwmValue(brightness));
 }
 
 void StairStep::setWhite() {
-    PwmValue brightness = mode == LightModeE::DayMode ? stepMapping.dayWhiteBrightness
-                                                      : stepMapping.nightWhiteBrightness;
+    const auto brightness = mode == LightModeE::DayMode ? stepMapping.dayWhiteBrightness
+                                                        : stepMapping.nightWhiteBrightness;
     uint8_t channelCold = (stepMapping.stepId % STEPS_PER_PWM_DEVICE) * 2 + 1;
-    pwmDevice->setPWM(channelCold, brightness);
+    pwmDevice->setPWM(channelCold, convertPercentageToPwmValue(brightness));
 }
 
 void StairStep::setAll() {
