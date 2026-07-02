@@ -7,20 +7,31 @@
 
 namespace {
 
+BrightnessPercentage parseBrightnessPercentage(const JsonVariantConst &brightnessJson) {
+    const int brightness = brightnessJson.as<int>();
+    if (brightness < 0 || brightness > 100) {
+        throw std::runtime_error("Brightness percentage must be in range 0-100");
+    }
+
+    return static_cast<BrightnessPercentage>(brightness);
+}
+
 void parseStairConfig(const JsonObject &stairJson, StairConfig &stairConfig) {
     stairConfig.stepsCount = stairJson["stepsCount"];
     if (auto lightMode = stairJson["lightMode"]; !lightMode.isNull()) {
         stairConfig.hasLightMode = true;
 
-        stairConfig.lightMode.day.yellowLightBrightness = lightMode["day"]["YellowLightBrightness"];
+        stairConfig.lightMode.day.yellowLightBrightness =
+            parseBrightnessPercentage(lightMode["day"]["YellowLightBrightness"]);
 
-        stairConfig.lightMode.day.whiteLightBrightness = lightMode["day"]["WhiteLightBrightness"];
+        stairConfig.lightMode.day.whiteLightBrightness =
+            parseBrightnessPercentage(lightMode["day"]["WhiteLightBrightness"]);
 
         stairConfig.lightMode.night.yellowLightBrightness =
-            lightMode["night"]["YellowLightBrightness"];
+            parseBrightnessPercentage(lightMode["night"]["YellowLightBrightness"]);
 
         stairConfig.lightMode.night.whiteLightBrightness =
-            lightMode["night"]["WhiteLightBrightness"];
+            parseBrightnessPercentage(lightMode["night"]["WhiteLightBrightness"]);
     }
 }
 
@@ -28,16 +39,16 @@ void parseGlobalSettings(const JsonObject &globalSettingsJson, Config &config) {
     auto lightMode = globalSettingsJson["lightMode"];
 
     config.globalSettings.lightMode.day.yellowLightBrightness =
-        lightMode["day"]["YellowLightBrightness"];
+        parseBrightnessPercentage(lightMode["day"]["YellowLightBrightness"]);
 
     config.globalSettings.lightMode.day.whiteLightBrightness =
-        lightMode["day"]["WhiteLightBrightness"];
+        parseBrightnessPercentage(lightMode["day"]["WhiteLightBrightness"]);
 
     config.globalSettings.lightMode.night.yellowLightBrightness =
-        lightMode["night"]["YellowLightBrightness"];
+        parseBrightnessPercentage(lightMode["night"]["YellowLightBrightness"]);
 
     config.globalSettings.lightMode.night.whiteLightBrightness =
-        lightMode["night"]["WhiteLightBrightness"];
+        parseBrightnessPercentage(lightMode["night"]["WhiteLightBrightness"]);
 }
 
 } // namespace

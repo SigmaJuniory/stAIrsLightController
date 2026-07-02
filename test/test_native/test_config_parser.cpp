@@ -12,9 +12,9 @@ constexpr auto jsonConfig = R"({
     "globalSettings": {
         "lightMode": {
             "day": {             
-                "YellowLightBrightness": 2000, "WhiteLightBrightness": 1800 },
+                "YellowLightBrightness": 80, "WhiteLightBrightness": 60 },
             "night": { 
-                "YellowLightBrightness": 100, "WhiteLightBrightness": 100 }
+                "YellowLightBrightness": 10, "WhiteLightBrightness": 5 }
         }
     },
     "stairs": [
@@ -24,11 +24,23 @@ constexpr auto jsonConfig = R"({
         {
             "stepsCount": 18,
             "lightMode": {
-                "day": { "YellowLightBrightness": 1500, "WhiteLightBrightness": 1200 },
-                "night": { "YellowLightBrightness": 100, "WhiteLightBrightness": 100 }
+                "day": { "YellowLightBrightness": 50, "WhiteLightBrightness": 40 },
+                "night": { "YellowLightBrightness": 10, "WhiteLightBrightness": 15 }
             }
         }
     ]
+})";
+
+constexpr auto jsonConfigWithInvalidBrightnessPercentage = R"({
+    "globalSettings": {
+        "lightMode": {
+            "day": {
+                "YellowLightBrightness": 101, "WhiteLightBrightness": 60 },
+            "night": {
+                "YellowLightBrightness": 10, "WhiteLightBrightness": 5 }
+        }
+    },
+    "stairs": []
 })";
 
 } // namespace
@@ -49,10 +61,10 @@ class ConfigParserTest : public ::testing::Test {};
 TEST_F(ConfigParserTest, ParsesStaircaseConfig) {
     Config config = ConfigParser::parseConfigFromJson(jsonConfig);
 
-    ASSERT_EQ(config.globalSettings.lightMode.day.yellowLightBrightness, 2000);
-    ASSERT_EQ(config.globalSettings.lightMode.day.whiteLightBrightness, 1800);
-    ASSERT_EQ(config.globalSettings.lightMode.night.yellowLightBrightness, 100);
-    ASSERT_EQ(config.globalSettings.lightMode.night.whiteLightBrightness, 100);
+    ASSERT_EQ(config.globalSettings.lightMode.day.yellowLightBrightness, 80);
+    ASSERT_EQ(config.globalSettings.lightMode.day.whiteLightBrightness, 60);
+    ASSERT_EQ(config.globalSettings.lightMode.night.yellowLightBrightness, 10);
+    ASSERT_EQ(config.globalSettings.lightMode.night.whiteLightBrightness, 5);
 
     ASSERT_EQ(config.stairs.size(), 2);
 
@@ -61,14 +73,19 @@ TEST_F(ConfigParserTest, ParsesStaircaseConfig) {
 
     ASSERT_EQ(config.stairs[1].stepsCount, 18);
     ASSERT_TRUE(config.stairs[1].hasLightMode);
-    ASSERT_EQ(config.stairs[1].lightMode.day.yellowLightBrightness, 1500);
-    ASSERT_EQ(config.stairs[1].lightMode.day.whiteLightBrightness, 1200);
-    ASSERT_EQ(config.stairs[1].lightMode.night.yellowLightBrightness, 100);
-    ASSERT_EQ(config.stairs[1].lightMode.night.whiteLightBrightness, 100);
+    ASSERT_EQ(config.stairs[1].lightMode.day.yellowLightBrightness, 50);
+    ASSERT_EQ(config.stairs[1].lightMode.day.whiteLightBrightness, 40);
+    ASSERT_EQ(config.stairs[1].lightMode.night.yellowLightBrightness, 10);
+    ASSERT_EQ(config.stairs[1].lightMode.night.whiteLightBrightness, 15);
 }
 
 TEST_F(ConfigParserTest, ParsesStaircaseConfigFromFile) {
     Config config = ConfigParser::parseConfigFromFile("test/test_native/config.json");
 
     ASSERT_EQ(config.globalSettings.lightMode.day.yellowLightBrightness, 80);
+}
+
+TEST_F(ConfigParserTest, RejectsBrightnessPercentagesOutOfRange) {
+    ASSERT_THROW(ConfigParser::parseConfigFromJson(jsonConfigWithInvalidBrightnessPercentage),
+                 std::runtime_error);
 }

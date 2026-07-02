@@ -22,10 +22,10 @@ struct StepMapping {
     uint8_t stepId;
     uint8_t stairIndex;
     uint8_t expanderI2CAddress;
-    PwmValue dayYellowBrightness;
-    PwmValue dayWhiteBrightness;
-    PwmValue nightYellowBrightness;
-    PwmValue nightWhiteBrightness;
+    BrightnessPercentage dayYellowBrightness;
+    BrightnessPercentage dayWhiteBrightness;
+    BrightnessPercentage nightYellowBrightness;
+    BrightnessPercentage nightWhiteBrightness;
 };
 
 class StairStep {
