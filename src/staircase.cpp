@@ -4,24 +4,6 @@
 #include <stdexcept>
 
 namespace {
-
-std::size_t countConfiguredSteps(const Config &config) {
-    std::size_t totalSteps = 0;
-
-    for (const auto &stairConfig : config.stairs) {
-        if (stairConfig.stepsCount < 0) {
-            throw std::invalid_argument("Configured stair steps count cannot be negative");
-        }
-
-        totalSteps += static_cast<std::size_t>(stairConfig.stepsCount);
-    }
-
-    return totalSteps;
-}
-
-} // namespace
-
-namespace {
 PwmValue convertPercentageToPwmValue(BrightnessPercentage percentage) {
     return (MAX_PWM_VALUE * percentage) / 100;
 }
@@ -75,7 +57,7 @@ StepMapping StairStep::getStepMapping() const {
 std::size_t StaircaseFactory::countRequiredPwmExpanders(const Config &config) {
     validateConfig(config);
 
-    const std::size_t totalSteps = countConfiguredSteps(config);
+    const std::size_t totalSteps = StaircaseFactory::countConfiguredSteps(config);
     if (totalSteps == 0) {
         return 0;
     }
@@ -84,7 +66,7 @@ std::size_t StaircaseFactory::countRequiredPwmExpanders(const Config &config) {
 }
 
 void StaircaseFactory::validateConfig(const Config &config) {
-    const std::size_t totalSteps = countConfiguredSteps(config);
+    const std::size_t totalSteps = StaircaseFactory::countConfiguredSteps(config);
     if (totalSteps > MAX_NUM_OF_STEPS) {
         throw std::invalid_argument("Configured stair steps exceed the supported maximum");
     }

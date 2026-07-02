@@ -2,6 +2,7 @@
 #include <Wire.h>
 
 #include <array>
+#include <utility>
 
 #include "config_parser.h"
 #include "pwm_device.h"
@@ -9,6 +10,22 @@
 
 static_vector<StairStep, MAX_NUM_OF_STEPS> stairSteps;
 bool staircaseReady = false;
+
+constexpr std::size_t maxPwmExpanders = MAX_NUM_OF_STEPS / STEPS_PER_PWM_DEVICE;
+
+namespace {
+
+template <std::size_t... Idx>
+std::array<PWMDevice, sizeof...(Idx)> makePwmExpandersImpl(TwoWire &wire,
+                                                           std::index_sequence<Idx...>) {
+    return {PWMDevice(BASE_I2C_ADRESS + Idx, wire)...};
+}
+
+auto makePwmExpanders(TwoWire &wire) {
+    return makePwmExpandersImpl(wire, std::make_index_sequence<maxPwmExpanders>{});
+}
+
+} // namespace
 
 // TODO: Add more steps to the demo config.
 constexpr auto demoConfig = R"({
@@ -39,17 +56,12 @@ void setup() {
     try {
         Config config = ConfigParser::parseConfigFromJson(demoConfig);
 
-        constexpr std::size_t maxPwmExpanders = MAX_NUM_OF_STEPS / STEPS_PER_PWM_DEVICE;
-        std::array<PWMDevice, maxPwmExpanders> pwmExpanders = {
-            PWMDevice(BASE_I2C_ADRESS + 0, Wire), PWMDevice(BASE_I2C_ADRESS + 1, Wire),
-            PWMDevice(BASE_I2C_ADRESS + 2, Wire), PWMDevice(BASE_I2C_ADRESS + 3, Wire),
-            PWMDevice(BASE_I2C_ADRESS + 4, Wire), PWMDevice(BASE_I2C_ADRESS + 5, Wire),
-            PWMDevice(BASE_I2C_ADRESS + 6, Wire), PWMDevice(BASE_I2C_ADRESS + 7, Wire)};
-
+        auto pwmExpanders = makePwmExpanders(Wire);
         static_map<uint8_t, IPWMDevice *, MAX_NUM_OF_STEPS> pwmDevices;
-        const auto requiredExpanders = StaircaseFactory::countRequiredPwmExpanders(config);
+        const auto requiredExpandersCount = StaircaseFactory::countRequiredPwmExpanders(config);
 
-        for (std::size_t expanderIndex = 0; expanderIndex < requiredExpanders; ++expanderIndex) {
+        for (std::size_t expanderIndex = 0; expanderIndex < requiredExpandersCount;
+             ++expanderIndex) {
             auto &expander = pwmExpanders[expanderIndex];
             if (!expander.begin()) {
                 Serial.printf("PCA9685 init failed for expander 0x%02x\n",

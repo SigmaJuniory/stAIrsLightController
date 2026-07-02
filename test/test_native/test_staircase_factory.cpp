@@ -84,13 +84,7 @@ constexpr Config createConfigWithStepsCount(const int stepsCount) {
     return cfg;
 }
 
-constexpr auto staircasesCount = []() {
-    uint8_t count = 0;
-    for (const auto &stairConfig : config.stairs) {
-        count += stairConfig.stepsCount;
-    }
-    return count;
-}();
+const auto staircasesCount = StaircaseFactory::countConfiguredSteps(config);
 
 } // namespace
 

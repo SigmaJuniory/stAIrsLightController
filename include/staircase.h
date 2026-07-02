@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <stdexcept>
 
 constexpr uint8_t CHANNELS_PER_EXPANDER = 16;
 constexpr uint8_t BASE_I2C_ADRESS = 0x40;
@@ -53,6 +54,20 @@ class StaircaseFactory {
     static static_vector<StairStep, MAX_NUM_OF_STEPS>
     createStaircaseFromConfig(const Config &config,
                               static_map<uint8_t, IPWMDevice *, MAX_NUM_OF_STEPS> &pwmDevices);
+
+    static std::size_t countConfiguredSteps(const Config &config) {
+        std::size_t totalSteps = 0;
+
+        for (const auto &stairConfig : config.stairs) {
+            if (stairConfig.stepsCount < 0) {
+                throw std::invalid_argument("Configured stair steps count cannot be negative");
+            }
+
+            totalSteps += static_cast<std::size_t>(stairConfig.stepsCount);
+        }
+
+        return totalSteps;
+    }
 
     static std::size_t countRequiredPwmExpanders(const Config &config);
     static void validateConfig(const Config &config);
