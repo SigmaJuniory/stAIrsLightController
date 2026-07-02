@@ -61,13 +61,13 @@ constexpr Config config = createTestConfig();
 
 Config createConfigWithStepsCount(const int stepsCount) {
     Config cfg;
-    cfg.globalSettings.lightMode = LightMode{.day = {.yellowLightBrightness = defaultDayYellowBrightness,
-                                                  .whiteLightBrightness = defaultDayWhiteBrightness},
-                                            .night = {.yellowLightBrightness = defaultNightYellowBrightness,
-                                                      .whiteLightBrightness = defaultNightWhiteBrightness}};
-    cfg.stairs.push_back(StairConfig{.stepsCount = stepsCount,
-                                     .hasLightMode = false,
-                                     .lightMode = {}});
+    cfg.globalSettings.lightMode =
+        LightMode{.day = {.yellowLightBrightness = defaultDayYellowBrightness,
+                          .whiteLightBrightness = defaultDayWhiteBrightness},
+                  .night = {.yellowLightBrightness = defaultNightYellowBrightness,
+                            .whiteLightBrightness = defaultNightWhiteBrightness}};
+    cfg.stairs.push_back(
+        StairConfig{.stepsCount = stepsCount, .hasLightMode = false, .lightMode = {}});
     return cfg;
 }
 
