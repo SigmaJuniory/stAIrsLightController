@@ -7,6 +7,7 @@
 class PWMDevice : public IPWMDevice {
   public:
     PWMDevice(const uint8_t addr, TwoWire &i2c);
+    PWMDevice() = default;
 
     bool begin() override;
     void setPWMFreq(float freq);
