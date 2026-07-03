@@ -17,8 +17,7 @@ void printStepMappings() {
 
     for (size_t i = 0; i < stairSteps.size(); i++) {
         const StepMapping mapping = stairSteps[i].getStepMapping();
-        const uint8_t yellowChannel =
-            (mapping.stepId % STEPS_PER_PWM_DEVICE) * CHANNELS_PER_STEP;
+        const uint8_t yellowChannel = (mapping.stepId % STEPS_PER_PWM_DEVICE) * CHANNELS_PER_STEP;
         const uint8_t whiteChannel = yellowChannel + 1;
 
         Serial.printf("Step %u -> PCA9685 0x%02x, yellow channel %u, white channel %u\n",
@@ -62,8 +61,8 @@ void updateStairSteps() {
     Config config = ConfigParser::parseConfigFromJson(demoConfig);
 
     pwmExpanderRegistry.initializePwmExpanders(StaircaseFactory::countRequiredPwmExpanders(config));
-    stairSteps =
-        StaircaseFactory::createStaircaseFromConfig(config, pwmExpanderRegistry.getPwmExpanderMap());
+    stairSteps = StaircaseFactory::createStaircaseFromConfig(
+        config, pwmExpanderRegistry.getPwmExpanderMap());
 }
 
 } // namespace
