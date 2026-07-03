@@ -1,6 +1,7 @@
 #include "staircase.h"
 
 #include <ctime>
+#include <stdexcept>
 
 namespace {
 PwmValue convertPercentageToPwmValue(BrightnessPercentage percentage) {
@@ -53,18 +54,41 @@ StepMapping StairStep::getStepMapping() const {
     return stepMapping;
 }
 
+std::size_t StaircaseFactory::countRequiredPwmExpanders(const Config &config) {
+    validateConfig(config);
+
+    const std::size_t totalSteps = StaircaseFactory::countConfiguredSteps(config);
+    if (totalSteps == 0) {
+        return 0;
+    }
+
+    return (totalSteps + STEPS_PER_PWM_DEVICE - 1) / STEPS_PER_PWM_DEVICE;
+}
+
+void StaircaseFactory::validateConfig(const Config &config) {
+    const std::size_t totalSteps = StaircaseFactory::countConfiguredSteps(config);
+    if (totalSteps > MAX_NUM_OF_STEPS) {
+        throw std::invalid_argument("Configured stair steps exceed the supported maximum");
+    }
+}
+
 static_vector<StairStep, MAX_NUM_OF_STEPS> StaircaseFactory::createStaircaseFromConfig(
     const Config &config, static_map<uint8_t, IPWMDevice *, MAX_NUM_OF_STEPS> &pwmDevices) {
+    validateConfig(config);
+
     static_vector<StairStep, MAX_NUM_OF_STEPS> staircases;
 
     uint8_t globalStepId = 0;
-    uint8_t baseI2CAddress = BASE_I2C_ADRESS;
 
     for (size_t stairIdx = 0; stairIdx < config.stairs.size(); stairIdx++) {
         const auto &stairConfig = config.stairs[stairIdx];
         for (int i = 0; i < stairConfig.stepsCount; i++) {
             uint8_t expanderIndex = globalStepId / STEPS_PER_PWM_DEVICE;
-            uint8_t expanderI2CAddress = baseI2CAddress + expanderIndex;
+            uint8_t expanderI2CAddress = BASE_I2C_ADRESS + expanderIndex;
+
+            if (!pwmDevices.contains(expanderI2CAddress)) {
+                throw std::runtime_error("No PWM device configured for expander address");
+            }
 
             LightMode lightMode = (stairConfig.hasLightMode) ? stairConfig.lightMode
                                                              : config.globalSettings.lightMode;
@@ -77,7 +101,7 @@ static_vector<StairStep, MAX_NUM_OF_STEPS> StaircaseFactory::createStaircaseFrom
                                     .nightYellowBrightness = lightMode.night.yellowLightBrightness,
                                     .nightWhiteBrightness = lightMode.night.whiteLightBrightness};
 
-            staircases.push_back(StairStep(stepMapping, pwmDevices[expanderI2CAddress]));
+            staircases.push_back(StairStep(stepMapping, pwmDevices.at(expanderI2CAddress)));
             globalStepId++;
         }
     }
